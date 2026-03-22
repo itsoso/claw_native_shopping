@@ -34,4 +34,14 @@ describe("evaluatePolicy", () => {
     expect(result.requiresApproval).toBe(false);
     expect(result.hardBlocked).toBe(true);
   });
+
+  it("never marks rejected outcomes as approval required", () => {
+    const result = evaluatePolicy(
+      { autoApproveLimit: 50, blockedSellers: ["seller_1"], requiredCertifications: [] },
+      { totalAmount: 55, sellerId: "seller_1", certifications: [] }
+    );
+
+    expect(result.decision).toBe("rejected");
+    expect(result.requiresApproval).toBe(false);
+  });
 });

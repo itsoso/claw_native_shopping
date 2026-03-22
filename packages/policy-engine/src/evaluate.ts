@@ -30,8 +30,12 @@ export const evaluatePolicy = (
   const hardBlocked = reasons.some(
     (reason) => reason === "seller_blocked" || reason === "missing_required_certification"
   );
-  const requiresApproval = reasons.includes("over_auto_approve_limit") || reasons.includes("substitutions_disallowed");
-  const decision = hardBlocked ? "rejected" : requiresApproval ? "approval_required" : "approved";
+  const decision = hardBlocked
+    ? "rejected"
+    : reasons.includes("over_auto_approve_limit") || reasons.includes("substitutions_disallowed")
+      ? "approval_required"
+      : "approved";
+  const requiresApproval = decision === "approval_required";
   const approvedAutomatically = decision === "approved";
 
   return {
