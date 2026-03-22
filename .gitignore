@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+.turbo
+.DS_Store
+*.tsbuildinfo
+.worktrees/
+worktrees/
+pnpm-lock.yaml
