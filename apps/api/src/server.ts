@@ -7,12 +7,6 @@ export const buildServer = () => {
   const app = Fastify({ logger: false });
   const store = createMemoryStore();
 
-  store.appendAuditEvent("order_1", { type: "SEED_ORDER" });
-  store.setOrderSnapshot({
-    orderId: "order_1",
-    status: "orderCommitted"
-  });
-
   registerIntentRoutes(app, store);
   registerOrderRoutes(app, store);
 

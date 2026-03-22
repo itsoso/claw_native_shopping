@@ -1,4 +1,4 @@
-import { createMemoryStore } from "../../../packages/memory/src/store.js";
+import { createMemoryStore, type MemoryStore, type OrderSnapshot } from "../../../packages/memory/src/store.js";
 import { evaluatePolicy } from "../../../packages/policy-engine/src/evaluate.js";
 import { planDemand } from "../../../packages/demand-planner/src/plan.js";
 import { rankOffers } from "../../../packages/offer-evaluator/src/score.js";
@@ -14,6 +14,8 @@ import { createProcurementMachine } from "./machine.js";
 
 export type ProcurementScenarioFixture = {
   inventoryHoldShouldFail?: boolean;
+  store?: MemoryStore;
+  sellerPort?: SellerProtocolPort;
 };
 
 export type ProcurementScenarioResult =
@@ -21,19 +23,21 @@ export type ProcurementScenarioResult =
       status: "orderCommitted";
       orderId: string;
       explanation: string[];
+      snapshot: OrderSnapshot;
     }
   | {
       status: "retry";
       reason: string;
       explanation: string[];
+      snapshot: OrderSnapshot;
     };
 
 const createSellerAdapter = (fixture: ProcurementScenarioFixture): SellerProtocolPort => {
   return {
     async requestQuote(rfq) {
       const rankedOffers = rankOffers([
-        { sellerId: "seller_1", totalCost: 34, etaHours: 4, trust: 0.9, policyMatch: 1 },
-        { sellerId: "seller_2", totalCost: 30, etaHours: 20, trust: 0.4, policyMatch: 0.7 }
+        { sellerId: "seller_1", totalCost: 20, etaHours: 4, trust: 0.9, policyMatch: 1 },
+        { sellerId: "seller_2", totalCost: 18, etaHours: 20, trust: 0.4, policyMatch: 0.7 }
       ]);
 
       const bestOffer = rankedOffers[0];
@@ -87,9 +91,29 @@ const createSellerAdapter = (fixture: ProcurementScenarioFixture): SellerProtoco
 export const runProcurementScenario = async (
   fixture: ProcurementScenarioFixture = {}
 ): Promise<ProcurementScenarioResult> => {
-  const store = createMemoryStore();
+  const store = fixture.store ?? createMemoryStore();
   const machine = createProcurementMachine();
-  const seller = createSellerAdapter(fixture);
+  const seller: SellerProtocolPort = fixture.sellerPort
+    ? {
+        async requestQuote(rfq) {
+          return fixture.sellerPort!.requestQuote(rfq);
+        },
+        async holdInventory(quote) {
+          if (fixture.inventoryHoldShouldFail) {
+            throw new Error("inventory_hold_failed");
+          }
+
+          return fixture.sellerPort!.holdInventory(quote);
+        },
+        async commitOrder(input) {
+          return fixture.sellerPort!.commitOrder(input);
+        }
+      }
+    : createSellerAdapter({
+        ...(fixture.inventoryHoldShouldFail === undefined
+          ? {}
+          : { inventoryHoldShouldFail: fixture.inventoryHoldShouldFail })
+      });
 
   let state = machine.initialState;
   state = machine.transition(state, { type: "QUOTE_COLLECTION" });
@@ -109,22 +133,7 @@ export const runProcurementScenario = async (
     throw new Error("no_demand_intent");
   }
 
-  const policyEvaluation = evaluatePolicy(
-    { autoApproveLimit: 50, blockedSellers: [], requiredCertifications: [] },
-    {
-      totalAmount: intent.budgetLimit - 5,
-      sellerId: "seller_1",
-      certifications: []
-    }
-  );
-
-  if (policyEvaluation.decision === "rejected") {
-    throw new Error("policy_rejected");
-  }
-
-  if (policyEvaluation.requiresApproval) {
-    state = machine.transition(state, { type: "APPROVAL_WAIT" });
-  }
+  const orderId = `order_${intent.id}`;
 
   const rfq = RFQSchema.parse({
     rfqId: intent.id,
@@ -133,28 +142,86 @@ export const runProcurementScenario = async (
     quantity: intent.quantity
   });
 
+  store.appendAuditEvent(orderId, {
+    type: "INTENT_CREATED",
+    category: intent.category,
+    quantity: intent.quantity
+  });
+
   const quote = await seller.requestQuote(rfq);
   state = machine.transition(state, { type: "OFFER_SELECTED" });
+
+  const quoteTotal = quote.items.reduce(
+    (sum, item) => sum + item.quantity * item.unitPrice,
+    0
+  ) + quote.shippingFee + quote.taxFee;
+
+  const policyEvaluation = evaluatePolicy(
+    { autoApproveLimit: 50, blockedSellers: [], requiredCertifications: [] },
+    {
+      totalAmount: quoteTotal,
+      sellerId: quote.sellerAgentId,
+      certifications: []
+    }
+  );
+
+  store.appendAuditEvent(orderId, {
+    type: "POLICY_EVALUATED",
+    decision: policyEvaluation.decision,
+    reasons: policyEvaluation.reasons,
+    totalAmount: quoteTotal,
+    sellerId: quote.sellerAgentId
+  });
+
+  if (policyEvaluation.decision === "rejected") {
+    const snapshot: OrderSnapshot = {
+      orderId,
+      status: "policyRejected",
+      rfqId: rfq.rfqId,
+      quoteId: quote.quoteId,
+      sellerAgentId: quote.sellerAgentId,
+      decision: policyEvaluation.decision
+    };
+    store.setOrderSnapshot(snapshot);
+
+    return {
+      status: "retry",
+      reason: "policy_rejected",
+      explanation: store.getAuditEvents(orderId).map((event) => event.type),
+      snapshot
+    };
+  }
+
+  if (policyEvaluation.requiresApproval) {
+    state = machine.transition(state, { type: "APPROVAL_WAIT" });
+  }
 
   let hold;
   try {
     hold = await seller.holdInventory(quote);
     state = machine.transition(state, { type: "INVENTORY_HELD" });
+    store.appendAuditEvent(orderId, {
+      type: "INVENTORY_HELD",
+      holdId: hold.holdId,
+      sellerId: quote.sellerAgentId
+    });
   } catch {
     state = machine.transition(state, { type: "EXCEPTION" });
     state = machine.transition(state, { type: "RETRY" });
-    store.appendAuditEvent(intent.id, { type: "INVENTORY_HOLD_FAILED" });
-    store.setOrderSnapshot({
-      orderId: intent.id,
+    store.appendAuditEvent(orderId, { type: "INVENTORY_HOLD_FAILED" });
+    const snapshot: OrderSnapshot = {
+      orderId,
       status: state.value,
       rfqId: rfq.rfqId,
       quoteId: quote.quoteId
-    });
+    };
+    store.setOrderSnapshot(snapshot);
 
     return {
       status: "retry",
       reason: "inventory_hold_failed",
-      explanation: store.getAuditEvents(intent.id).map((event) => event.type)
+      explanation: store.getAuditEvents(orderId).map((event) => event.type),
+      snapshot
     };
   }
 
@@ -172,23 +239,37 @@ export const runProcurementScenario = async (
     }
   });
 
+  store.appendAuditEvent(orderId, { type: "PAYMENT_AUTHORIZED" });
   state = machine.transition(state, { type: "PAYMENT_AUTHORIZED" });
   state = machine.transition(state, { type: "ORDER_COMMITTED" });
   state = machine.transition(state, { type: "FULFILLMENT_STARTED" });
 
-  store.appendAuditEvent(checkoutResult.orderId, { type: "QUOTE_SELECTED" });
-  store.appendAuditEvent(checkoutResult.orderId, { type: "ORDER_COMMITTED" });
-  store.setOrderSnapshot({
+  store.appendAuditEvent(orderId, {
+    type: "QUOTE_SELECTED",
+    sellerId: quote.sellerAgentId,
+    quoteId: quote.quoteId,
+    totalAmount: quoteTotal
+  });
+  store.appendAuditEvent(orderId, {
+    type: "ORDER_COMMITTED",
+    orderId: checkoutResult.orderId
+  });
+  const snapshot: OrderSnapshot = {
     orderId: checkoutResult.orderId,
     status: state.value,
     rfqId: rfq.rfqId,
     quoteId: quote.quoteId,
-    holdId: hold.holdId
-  });
+    holdId: hold.holdId,
+    sellerAgentId: quote.sellerAgentId,
+    totalAmount: quoteTotal,
+    policyDecision: policyEvaluation.decision
+  };
+  store.setOrderSnapshot(snapshot);
 
   return {
     status: "orderCommitted",
     orderId: checkoutResult.orderId,
-    explanation: store.getAuditEvents(checkoutResult.orderId).map((event) => event.type)
+    explanation: store.getAuditEvents(orderId).map((event) => event.type),
+    snapshot
   };
 };

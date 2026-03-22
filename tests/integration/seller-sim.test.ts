@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildSellerSimServer } from "../../apps/seller-sim/src/server.js";
-import { requestQuote } from "../helpers/request-quote.js";
+import { createSellerSimProtocolPort, requestQuote } from "../helpers/request-quote.js";
 
 describe("seller simulator", () => {
   it("returns a quote for supported RFQs", async () => {
@@ -16,25 +16,31 @@ describe("seller simulator", () => {
     const app = buildSellerSimServer();
 
     try {
-      const quoteResponse = await app.inject({
-        method: "POST",
-        url: "/rfq",
-        payload: {
-          rfqId: "rfq_1",
+      const port = createSellerSimProtocolPort(app);
+      const quote = await port.requestQuote({
+        rfqId: "rfq_1",
+        buyerAgentId: "buyer_1",
+        category: "eggs",
+        quantity: 2
+      });
+
+      const hold = await port.holdInventory({
+        ...quote
+      });
+
+      const commit = await port.commitOrder({
+        rfq: {
+          rfqId: quote.rfqId,
           buyerAgentId: "buyer_1",
           category: "eggs",
           quantity: 2
-        }
-      });
-      const quote = quoteResponse.json() as { quoteId: string };
-
-      const holdResponse = await app.inject({
-        method: "POST",
-        url: `/quotes/${quote.quoteId}/hold`
+        },
+        quote,
+        hold
       });
 
-      expect(holdResponse.statusCode).toBe(200);
-      expect(holdResponse.json().quoteId).toBe(quote.quoteId);
+      expect(hold.quoteId).toBe(quote.quoteId);
+      expect(commit.orderId).toBe("order_rfq_1");
     } finally {
       await app.close();
     }

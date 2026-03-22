@@ -1,26 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
-  findCommittedOrderAuditViolations,
-  findOrderStateWriterViolations,
-  findPaymentPortLeaks
+  findOrderStateMutationViolations,
+  findPaymentPortImportViolations,
+  serviceEmitsCommittedOrderAuditEvent
 } from "../helpers/architecture-guards.js";
 
 describe("architecture guardrails", () => {
-  it("keeps payment ports inside checkout", async () => {
-    const leaks = await findPaymentPortLeaks();
-
-    expect(leaks).toEqual([]);
+  it("prevents llm-facing modules from directly using payment ports", () => {
+    expect(findPaymentPortImportViolations()).toEqual([]);
   });
 
-  it("allows only the orchestrator to mutate order state", async () => {
-    const violations = await findOrderStateWriterViolations();
-
-    expect(violations).toEqual([]);
+  it("allows only the orchestrator to mutate order state", () => {
+    expect(findOrderStateMutationViolations()).toEqual([]);
   });
 
-  it("requires committed orders to emit audit events", async () => {
-    const violations = await findCommittedOrderAuditViolations();
-
-    expect(violations).toEqual([]);
+  it("requires audit events for committed orders", () => {
+    expect(serviceEmitsCommittedOrderAuditEvent()).toBe(true);
   });
 });
