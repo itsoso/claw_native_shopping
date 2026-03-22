@@ -14,6 +14,7 @@ import { createProcurementMachine } from "./machine.js";
 
 export type ProcurementScenarioFixture = {
   inventoryHoldShouldFail?: boolean;
+  policyAutoApproveLimit?: number;
   store?: MemoryStore;
   sellerPort?: SellerProtocolPort;
 };
@@ -22,6 +23,13 @@ export type ProcurementScenarioResult =
   | {
       status: "orderCommitted";
       orderId: string;
+      explanation: string[];
+      snapshot: OrderSnapshot;
+    }
+  | {
+      status: "approvalRequired";
+      orderId: string;
+      reason: "approval_required";
       explanation: string[];
       snapshot: OrderSnapshot;
     }
@@ -156,8 +164,19 @@ export const runProcurementScenario = async (
     0
   ) + quote.shippingFee + quote.taxFee;
 
+  store.appendAuditEvent(orderId, {
+    type: "QUOTE_SELECTED",
+    sellerId: quote.sellerAgentId,
+    quoteId: quote.quoteId,
+    totalAmount: quoteTotal
+  });
+
   const policyEvaluation = evaluatePolicy(
-    { autoApproveLimit: 50, blockedSellers: [], requiredCertifications: [] },
+    {
+      autoApproveLimit: fixture.policyAutoApproveLimit ?? 50,
+      blockedSellers: [],
+      requiredCertifications: []
+    },
     {
       totalAmount: quoteTotal,
       sellerId: quote.sellerAgentId,
@@ -194,6 +213,31 @@ export const runProcurementScenario = async (
 
   if (policyEvaluation.requiresApproval) {
     state = machine.transition(state, { type: "APPROVAL_WAIT" });
+    store.appendAuditEvent(orderId, {
+      type: "APPROVAL_REQUIRED",
+      decision: policyEvaluation.decision,
+      reasons: policyEvaluation.reasons,
+      totalAmount: quoteTotal,
+      sellerId: quote.sellerAgentId
+    });
+    const snapshot: OrderSnapshot = {
+      orderId,
+      status: "approvalWait",
+      rfqId: rfq.rfqId,
+      quoteId: quote.quoteId,
+      sellerAgentId: quote.sellerAgentId,
+      totalAmount: quoteTotal,
+      policyDecision: policyEvaluation.decision
+    };
+    store.setOrderSnapshot(snapshot);
+
+    return {
+      status: "approvalRequired",
+      orderId,
+      reason: "approval_required",
+      explanation: store.getAuditEvents(orderId).map((event) => event.type),
+      snapshot
+    };
   }
 
   let hold;
@@ -244,12 +288,6 @@ export const runProcurementScenario = async (
   state = machine.transition(state, { type: "ORDER_COMMITTED" });
   state = machine.transition(state, { type: "FULFILLMENT_STARTED" });
 
-  store.appendAuditEvent(orderId, {
-    type: "QUOTE_SELECTED",
-    sellerId: quote.sellerAgentId,
-    quoteId: quote.quoteId,
-    totalAmount: quoteTotal
-  });
   store.appendAuditEvent(orderId, {
     type: "ORDER_COMMITTED",
     orderId: checkoutResult.orderId
