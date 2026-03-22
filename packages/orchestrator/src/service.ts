@@ -12,12 +12,23 @@ import {
 import { executeCheckout } from "../../../packages/checkout/src/execute.js";
 import { createProcurementMachine } from "./machine.js";
 
-type ProcurementScenarioResult = {
-  status: "orderCommitted";
-  orderId: string;
+export type ProcurementScenarioFixture = {
+  inventoryHoldShouldFail?: boolean;
 };
 
-const createSellerAdapter = (): SellerProtocolPort => {
+export type ProcurementScenarioResult =
+  | {
+      status: "orderCommitted";
+      orderId: string;
+      explanation: string[];
+    }
+  | {
+      status: "retry";
+      reason: string;
+      explanation: string[];
+    };
+
+const createSellerAdapter = (fixture: ProcurementScenarioFixture): SellerProtocolPort => {
   return {
     async requestQuote(rfq) {
       const rankedOffers = rankOffers([
@@ -49,6 +60,10 @@ const createSellerAdapter = (): SellerProtocolPort => {
       });
     },
     async holdInventory(quote) {
+      if (fixture.inventoryHoldShouldFail) {
+        throw new Error("inventory_hold_failed");
+      }
+
       return InventoryHoldSchema.parse({
         holdId: `hold_${quote.quoteId}`,
         rfqId: quote.rfqId,
@@ -69,10 +84,12 @@ const createSellerAdapter = (): SellerProtocolPort => {
   };
 };
 
-export const runProcurementScenario = async (): Promise<ProcurementScenarioResult> => {
+export const runProcurementScenario = async (
+  fixture: ProcurementScenarioFixture = {}
+): Promise<ProcurementScenarioResult> => {
   const store = createMemoryStore();
   const machine = createProcurementMachine();
-  const seller = createSellerAdapter();
+  const seller = createSellerAdapter(fixture);
 
   let state = machine.initialState;
   state = machine.transition(state, { type: "QUOTE_COLLECTION" });
@@ -119,8 +136,27 @@ export const runProcurementScenario = async (): Promise<ProcurementScenarioResul
   const quote = await seller.requestQuote(rfq);
   state = machine.transition(state, { type: "OFFER_SELECTED" });
 
-  const hold = await seller.holdInventory(quote);
-  state = machine.transition(state, { type: "INVENTORY_HELD" });
+  let hold;
+  try {
+    hold = await seller.holdInventory(quote);
+    state = machine.transition(state, { type: "INVENTORY_HELD" });
+  } catch {
+    state = machine.transition(state, { type: "EXCEPTION" });
+    state = machine.transition(state, { type: "RETRY" });
+    store.appendAuditEvent(intent.id, { type: "INVENTORY_HOLD_FAILED" });
+    store.setOrderSnapshot({
+      orderId: intent.id,
+      status: state.value,
+      rfqId: rfq.rfqId,
+      quoteId: quote.quoteId
+    });
+
+    return {
+      status: "retry",
+      reason: "inventory_hold_failed",
+      explanation: store.getAuditEvents(intent.id).map((event) => event.type)
+    };
+  }
 
   const checkoutResult = await executeCheckout({
     holdConfirmed: true,
@@ -152,6 +188,7 @@ export const runProcurementScenario = async (): Promise<ProcurementScenarioResul
 
   return {
     status: "orderCommitted",
-    orderId: checkoutResult.orderId
+    orderId: checkoutResult.orderId,
+    explanation: store.getAuditEvents(checkoutResult.orderId).map((event) => event.type)
   };
 };

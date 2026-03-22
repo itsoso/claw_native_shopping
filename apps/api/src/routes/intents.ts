@@ -6,11 +6,20 @@ export const registerIntentRoutes = (app: FastifyInstance, store: MemoryStore): 
   app.post("/intents/replenish", async () => {
     const result = await runProcurementScenario();
 
-    store.appendAuditEvent(result.orderId, { type: "INTENT_REPLENISH_REQUESTED" });
-    store.setOrderSnapshot({
-      orderId: result.orderId,
-      status: result.status
-    });
+    if (result.status === "orderCommitted") {
+      store.appendAuditEvent(result.orderId, { type: "INTENT_REPLENISH_REQUESTED" });
+      store.setOrderSnapshot({
+        orderId: result.orderId,
+        status: result.status
+      });
+    } else {
+      store.appendAuditEvent("order_retry", { type: result.reason });
+      store.setOrderSnapshot({
+        orderId: "order_retry",
+        status: result.status,
+        reason: result.reason
+      });
+    }
 
     return result;
   });
