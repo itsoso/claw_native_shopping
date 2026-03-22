@@ -9,7 +9,8 @@ const createIntentId = (sku: string): string => `intent_${sku}`;
 
 const createDemandIntent = (
   item: DemandPlannerInventoryItem,
-  catalogEntry: DemandPlannerCatalogEntry
+  catalogEntry: DemandPlannerCatalogEntry,
+  planningDefaults: DemandPlannerInput["planningDefaults"]
 ): DemandIntent => ({
   id: createIntentId(item.sku),
   category: catalogEntry.category,
@@ -17,9 +18,9 @@ const createDemandIntent = (
   quantity: Math.max(1, item.reorderPoint - item.quantityOnHand),
   urgency: "soon",
   deliveryWindow: {
-    latestAt: "1970-01-01T00:00:00.000Z"
+    latestAt: planningDefaults.deliveryWindowLatestAt
   },
-  budgetLimit: Number.MAX_SAFE_INTEGER,
+  budgetLimit: planningDefaults.budgetLimit,
   substitutionPolicy: "allowed",
   sourceSignals: ["inventory_threshold"]
 });
@@ -37,7 +38,7 @@ export const planDemand = (input: DemandPlannerInput): DemandIntent[] => {
       continue;
     }
 
-    intents.push(createDemandIntent(item, catalogEntry));
+    intents.push(createDemandIntent(item, catalogEntry, input.planningDefaults));
   }
 
   return intents;

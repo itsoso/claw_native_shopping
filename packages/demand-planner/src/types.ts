@@ -14,6 +14,12 @@ export type DemandPlannerCatalogEntry = {
 export type DemandPlannerInput = {
   inventory: DemandPlannerInventoryItem[];
   catalogMap: Record<string, DemandPlannerCatalogEntry>;
+  planningDefaults: DemandPlannerPlanningDefaults;
+};
+
+export type DemandPlannerPlanningDefaults = {
+  deliveryWindowLatestAt: string;
+  budgetLimit: number;
 };
 
 export type { DemandIntent };
