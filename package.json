@@ -7,7 +7,8 @@
   "scripts": {
     "test": "vitest run",
     "lint": "eslint .",
-    "typecheck": "tsc -p tsconfig.base.json --noEmit"
+    "typecheck": "tsc -p tsconfig.base.json --noEmit",
+    "verify": "bash scripts/verify.sh"
   },
   "devDependencies": {
     "@types/node": "^22.13.14",
