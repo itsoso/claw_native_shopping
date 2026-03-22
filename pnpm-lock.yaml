@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^22.13.14
@@ -900,6 +904,9 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
 snapshots:
 
   '@esbuild/aix-ppc64@0.27.4':
@@ -1657,3 +1664,5 @@ snapshots:
   word-wrap@1.2.5: {}
 
   yocto-queue@0.1.0: {}
+
+  zod@3.25.76: {}
