@@ -27,10 +27,17 @@ export const evaluatePolicy = (
     reasons.push("substitutions_disallowed");
   }
 
-  const approvedAutomatically = reasons.length === 0;
+  const hardBlocked = reasons.some(
+    (reason) => reason === "seller_blocked" || reason === "missing_required_certification"
+  );
+  const requiresApproval = reasons.includes("over_auto_approve_limit") || reasons.includes("substitutions_disallowed");
+  const decision = hardBlocked ? "rejected" : requiresApproval ? "approval_required" : "approved";
+  const approvedAutomatically = decision === "approved";
 
   return {
-    requiresApproval: !approvedAutomatically,
+    decision,
+    requiresApproval,
+    hardBlocked,
     approvedAutomatically,
     reasons,
     substitutionAllowed

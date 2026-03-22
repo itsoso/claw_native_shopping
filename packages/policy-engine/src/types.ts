@@ -18,8 +18,12 @@ export type PolicyDecisionReason =
   | "missing_required_certification"
   | "substitutions_disallowed";
 
+export type PolicyDecision = "approved" | "approval_required" | "rejected";
+
 export type PolicyEvaluationResult = {
+  decision: PolicyDecision;
   requiresApproval: boolean;
+  hardBlocked: boolean;
   approvedAutomatically: boolean;
   reasons: PolicyDecisionReason[];
   substitutionAllowed: boolean;
