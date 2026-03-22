@@ -6,4 +6,3 @@ coverage
 *.tsbuildinfo
 .worktrees/
 worktrees/
-pnpm-lock.yaml
