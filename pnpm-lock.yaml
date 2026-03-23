@@ -33,9 +33,19 @@ importers:
 
   packages/catalog: {}
 
+  packages/checkout: {}
+
   packages/contracts: {}
 
   packages/demand-planner: {}
+
+  packages/fulfillment: {}
+
+  packages/memory: {}
+
+  packages/offer-evaluator: {}
+
+  packages/orchestrator: {}
 
   packages/policy-engine: {}
 
