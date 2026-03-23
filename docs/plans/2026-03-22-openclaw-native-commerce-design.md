@@ -2,9 +2,19 @@
 
 **Document Date:** 2026-03-22
 
-**Status:** Draft approved for planning
+**Status:** Implemented MVP baseline
 
 **Objective:** Define a buyer-agent-first commerce architecture where OpenClaw acts as the user's default procurement agent, with structured A2A trade, policy-aware automation, and full auditability.
+
+## 0. Current Implementation Notes
+
+This document started as the target architecture for the initial build. The current branch now implements the MVP baseline and the following details are part of the live architecture rather than open design intent:
+
+- `approval_required` is a real stop-state in the procurement flow; it does not fall through into hold, payment, or commit
+- demand-planner receives delivery-window and budget defaults explicitly as planner input instead of fabricating placeholder business facts
+- buyer API and procurement service share the same in-memory audit store so `/orders/:id/explanation` reflects the real execution trail
+- end-to-end verification exercises the real `seller-sim` Fastify service through a protocol port instead of only using an in-process fake
+- architecture guardrails are enforced by source-inspecting tests rather than hardcoded allowlists
 
 ---
 
