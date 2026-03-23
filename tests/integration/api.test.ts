@@ -1,7 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { buildServer } from "../../apps/api/src/server.js";
+import { buildServer, startApiServer } from "../../apps/api/src/server.js";
 
 describe("buyer api", () => {
+  it("can start a real HTTP listener", async () => {
+    const { app, baseUrl } = await startApiServer({
+      port: 0,
+      host: "127.0.0.1"
+    });
+
+    try {
+      const response = await fetch(`${baseUrl}/orders/missing-order/explanation`);
+      expect(response.status).toBe(404);
+    } finally {
+      await app.close();
+    }
+  });
+
   it("persists and returns the real procurement explanation", async () => {
     const app = buildServer();
 

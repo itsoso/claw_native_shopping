@@ -1,8 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { buildSellerSimServer } from "../../apps/seller-sim/src/server.js";
+import {
+  buildSellerSimServer,
+  startSellerSimServer
+} from "../../apps/seller-sim/src/server.js";
 import { createSellerSimProtocolPort, requestQuote } from "../helpers/request-quote.js";
 
 describe("seller simulator", () => {
+  it("can start a real HTTP listener", async () => {
+    const { app, baseUrl } = await startSellerSimServer({
+      port: 0,
+      host: "127.0.0.1"
+    });
+
+    try {
+      const response = await fetch(`${baseUrl}/rfq`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          rfqId: "rfq_runtime",
+          buyerAgentId: "buyer_1",
+          category: "eggs",
+          quantity: 2
+        })
+      });
+
+      expect(response.status).toBe(200);
+    } finally {
+      await app.close();
+    }
+  });
+
   it("returns a quote for supported RFQs", async () => {
     const quote = await requestQuote({
       category: "eggs",
