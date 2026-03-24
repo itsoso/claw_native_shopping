@@ -6,3 +6,6 @@ coverage
 *.tsbuildinfo
 .worktrees/
 worktrees/
+.wxt/
+.output/
+test-results/
