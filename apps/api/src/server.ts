@@ -14,6 +14,19 @@ export const buildServer = (): FastifyInstance => {
   const app = Fastify({ logger: false });
   const store = createMemoryStore();
 
+  app.addHook("onSend", async (_request, reply, payload) => {
+    reply.header("access-control-allow-origin", "*");
+    reply.header("access-control-allow-methods", "GET,POST,OPTIONS");
+    reply.header("access-control-allow-headers", "content-type");
+
+    return payload;
+  });
+
+  app.options("*", async (_request, reply) => {
+    reply.code(204);
+    return reply.send();
+  });
+
   registerIntentRoutes(app, store);
   registerOrderRoutes(app, store);
 

@@ -11,7 +11,7 @@
     "start:web": "pnpm --filter @claw/web start",
     "build:web": "pnpm --filter @claw/web build",
     "test": "vitest run",
-    "test:e2e": "playwright test tests/e2e/product-page.spec.ts tests/e2e/cart-page.spec.ts",
+    "test:e2e": "playwright test tests/e2e/product-page.spec.ts tests/e2e/cart-page.spec.ts tests/e2e/web-demo.spec.ts",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.base.json --noEmit",
     "verify": "bash scripts/verify.sh",

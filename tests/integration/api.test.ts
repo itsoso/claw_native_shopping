@@ -16,6 +16,29 @@ describe("buyer api", () => {
     }
   });
 
+  it("responds to browser preflight requests for the demo web app", async () => {
+    const app = buildServer();
+
+    try {
+      const response = await app.inject({
+        method: "OPTIONS",
+        url: "/intents/replenish",
+        headers: {
+          origin: "http://127.0.0.1:4174",
+          "access-control-request-method": "POST",
+          "access-control-request-headers": "content-type"
+        }
+      });
+
+      expect(response.statusCode).toBe(204);
+      expect(response.headers["access-control-allow-origin"]).toBe("*");
+      expect(response.headers["access-control-allow-methods"]).toContain("POST");
+      expect(response.headers["access-control-allow-headers"]).toContain("content-type");
+    } finally {
+      await app.close();
+    }
+  });
+
   it("persists and returns household replenishment metadata", async () => {
     const app = buildServer();
 
