@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import {
   injectContentScript,
   installExtensionHarness,
-} from "./helpers/extensionHarness";
+} from "./helpers/extensionHarness.js";
 
 test("shows the decision card on a JD product fixture", async ({ page }) => {
   await installExtensionHarness(page);

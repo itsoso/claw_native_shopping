@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { JD_CART_URL, JD_ITEM_URL } from "../../../apps/browser-extension/src/config/targets";
+import { JD_CART_URL, JD_ITEM_URL } from "../../../apps/browser-extension/src/config/targets.js";
 
 describe("browser extension targets", () => {
   it("locks the MVP to JD item and cart pages", () => {

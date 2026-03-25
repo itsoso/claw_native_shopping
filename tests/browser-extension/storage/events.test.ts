@@ -157,9 +157,9 @@ describe("events storage", () => {
   it("keeps same-millisecond events from separate module instances", async () => {
     vi.spyOn(Date, "now").mockReturnValue(3000);
     vi.spyOn(globalThis.crypto, "randomUUID")
-      .mockReturnValueOnce("instance-a")
-      .mockReturnValueOnce("instance-b")
-      .mockReturnValue("instance-c");
+      .mockReturnValueOnce("11111111-1111-4111-8111-111111111111")
+      .mockReturnValueOnce("22222222-2222-4222-8222-222222222222")
+      .mockReturnValue("33333333-3333-4333-8333-333333333333");
 
     const firstModule = await loadEventsModule();
     await firstModule.recordEvent({
