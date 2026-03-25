@@ -11,8 +11,14 @@ import {
 } from "../../../packages/seller-protocol/src/messages.js";
 import { executeCheckout } from "../../../packages/checkout/src/execute.js";
 import { createProcurementMachine } from "./machine.js";
+import {
+  getProcurementScenario,
+  type ProcurementScenarioDefinition,
+  type ProcurementScenarioId
+} from "./scenarios.js";
 
 export type ProcurementScenarioFixture = {
+  scenarioId?: ProcurementScenarioId;
   inventoryHoldShouldFail?: boolean;
   policyAutoApproveLimit?: number;
   store?: MemoryStore;
@@ -40,13 +46,13 @@ export type ProcurementScenarioResult =
       snapshot: OrderSnapshot;
     };
 
-const createSellerAdapter = (fixture: ProcurementScenarioFixture): SellerProtocolPort => {
+const createSellerAdapter = (
+  fixture: ProcurementScenarioFixture,
+  scenario: ProcurementScenarioDefinition
+): SellerProtocolPort => {
   return {
     async requestQuote(rfq) {
-      const rankedOffers = rankOffers([
-        { sellerId: "seller_1", totalCost: 20, etaHours: 4, trust: 0.9, policyMatch: 1 },
-        { sellerId: "seller_2", totalCost: 18, etaHours: 20, trust: 0.4, policyMatch: 0.7 }
-      ]);
+      const rankedOffers = rankOffers(scenario.offers);
 
       const bestOffer = rankedOffers[0];
       if (!bestOffer) {
@@ -59,14 +65,14 @@ const createSellerAdapter = (fixture: ProcurementScenarioFixture): SellerProtoco
         sellerAgentId: bestOffer.sellerId,
         items: [
           {
-            productId: "egg-12",
+            productId: scenario.offerProductId,
             quantity: rfq.quantity,
             unitPrice: bestOffer.totalCost
           }
         ],
         shippingFee: 0,
         taxFee: 0,
-        deliveryEta: "2026-03-24T09:00:00+08:00",
+        deliveryEta: scenario.offerDeliveryEta,
         inventoryHoldTtlSec: 900,
         serviceTerms: { trustScore: bestOffer.trust }
       });
@@ -101,6 +107,7 @@ export const runProcurementScenario = async (
 ): Promise<ProcurementScenarioResult> => {
   const store = fixture.store ?? createMemoryStore();
   const machine = createProcurementMachine();
+  const scenario = getProcurementScenario(fixture.scenarioId ?? "home");
   const seller: SellerProtocolPort = fixture.sellerPort
     ? {
         async requestQuote(rfq) {
@@ -121,20 +128,15 @@ export const runProcurementScenario = async (
         ...(fixture.inventoryHoldShouldFail === undefined
           ? {}
           : { inventoryHoldShouldFail: fixture.inventoryHoldShouldFail })
-      });
+      }, scenario);
 
   let state = machine.initialState;
   state = machine.transition(state, { type: "QUOTE_COLLECTION" });
 
   const [intent] = planDemand({
-    inventory: [{ sku: "egg-12", quantityOnHand: 2, reorderPoint: 4 }],
-    catalogMap: {
-      "egg-12": { category: "eggs", normalizedAttributes: { count: 12 } }
-    },
-    planningDefaults: {
-      deliveryWindowLatestAt: "2026-03-24T09:00:00+08:00",
-      budgetLimit: 40
-    }
+    inventory: scenario.inventory,
+    catalogMap: scenario.catalogMap,
+    planningDefaults: scenario.planningDefaults
   });
 
   if (!intent) {
@@ -145,7 +147,7 @@ export const runProcurementScenario = async (
 
   const rfq = RFQSchema.parse({
     rfqId: intent.id,
-    buyerAgentId: "buyer_1",
+    buyerAgentId: scenario.buyerAgentId,
     category: intent.category,
     quantity: intent.quantity
   });
@@ -173,7 +175,7 @@ export const runProcurementScenario = async (
 
   const policyEvaluation = evaluatePolicy(
     {
-      autoApproveLimit: fixture.policyAutoApproveLimit ?? 50,
+      autoApproveLimit: fixture.policyAutoApproveLimit ?? scenario.defaultAutoApproveLimit,
       blockedSellers: [],
       requiredCertifications: []
     },
@@ -196,6 +198,10 @@ export const runProcurementScenario = async (
     const snapshot: OrderSnapshot = {
       orderId,
       status: "policyRejected",
+      scenarioId: scenario.scenarioId,
+      scenarioLabel: scenario.label,
+      category: intent.category,
+      requestedQuantity: intent.quantity,
       rfqId: rfq.rfqId,
       quoteId: quote.quoteId,
       sellerAgentId: quote.sellerAgentId,
@@ -223,6 +229,10 @@ export const runProcurementScenario = async (
     const snapshot: OrderSnapshot = {
       orderId,
       status: "approvalWait",
+      scenarioId: scenario.scenarioId,
+      scenarioLabel: scenario.label,
+      category: intent.category,
+      requestedQuantity: intent.quantity,
       rfqId: rfq.rfqId,
       quoteId: quote.quoteId,
       sellerAgentId: quote.sellerAgentId,
@@ -256,6 +266,10 @@ export const runProcurementScenario = async (
     const snapshot: OrderSnapshot = {
       orderId,
       status: state.value,
+      scenarioId: scenario.scenarioId,
+      scenarioLabel: scenario.label,
+      category: intent.category,
+      requestedQuantity: intent.quantity,
       rfqId: rfq.rfqId,
       quoteId: quote.quoteId
     };
@@ -295,6 +309,10 @@ export const runProcurementScenario = async (
   const snapshot: OrderSnapshot = {
     orderId: checkoutResult.orderId,
     status: state.value,
+    scenarioId: scenario.scenarioId,
+    scenarioLabel: scenario.label,
+    category: intent.category,
+    requestedQuantity: intent.quantity,
     rfqId: rfq.rfqId,
     quoteId: quote.quoteId,
     holdId: hold.holdId,

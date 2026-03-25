@@ -16,18 +16,23 @@ describe("buyer api", () => {
     }
   });
 
-  it("persists and returns the real procurement explanation", async () => {
+  it("persists and returns household replenishment metadata", async () => {
     const app = buildServer();
 
     try {
       const replenishResponse = await app.inject({
         method: "POST",
-        url: "/intents/replenish"
+        url: "/intents/replenish",
+        payload: {
+          scenarioId: "home"
+        }
       });
 
       expect(replenishResponse.statusCode).toBe(200);
 
-      const replenish = replenishResponse.json() as { orderId: string };
+      const replenish = replenishResponse.json() as { orderId: string; snapshot: { scenarioId: string } };
+      expect(replenish.snapshot.scenarioId).toBe("home");
+
       const explanationResponse = await app.inject({
         method: "GET",
         url: `/orders/${replenish.orderId}/explanation`
@@ -37,7 +42,7 @@ describe("buyer api", () => {
 
       const explanation = explanationResponse.json() as {
         explanation: Array<{ type: string }>;
-        snapshot: { status: string };
+        snapshot: { status: string; scenarioId: string; category: string };
       };
 
       expect(explanation.explanation.map((event) => event.type)).toContain(
@@ -47,6 +52,61 @@ describe("buyer api", () => {
         "ORDER_COMMITTED"
       );
       expect(explanation.snapshot.status).toBe("fulfillmentStarted");
+      expect(explanation.snapshot.scenarioId).toBe("home");
+      expect(explanation.snapshot.category).toBe("eggs");
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("supports office scenarios and approval-required demo runs", async () => {
+    const app = buildServer();
+
+    try {
+      const officeResponse = await app.inject({
+        method: "POST",
+        url: "/intents/replenish",
+        payload: {
+          scenarioId: "office"
+        }
+      });
+
+      expect(officeResponse.statusCode).toBe(200);
+
+      const office = officeResponse.json() as {
+        status: string;
+        snapshot: { scenarioId: string; category: string };
+      };
+      expect(office.status).toBe("orderCommitted");
+      expect(office.snapshot.scenarioId).toBe("office");
+      expect(office.snapshot.category).toBe("coffee");
+
+      const approvalResponse = await app.inject({
+        method: "POST",
+        url: "/intents/replenish",
+        payload: {
+          scenarioId: "office",
+          demo: {
+            forceApproval: true
+          }
+        }
+      });
+
+      expect(approvalResponse.statusCode).toBe(200);
+
+      const approval = approvalResponse.json() as {
+        status: string;
+        reason: string;
+        explanation: string[];
+        snapshot: { status: string; scenarioId: string; category: string };
+      };
+
+      expect(approval.status).toBe("approvalRequired");
+      expect(approval.reason).toBe("approval_required");
+      expect(approval.explanation).toContain("APPROVAL_REQUIRED");
+      expect(approval.snapshot.status).toBe("approvalWait");
+      expect(approval.snapshot.scenarioId).toBe("office");
+      expect(approval.snapshot.category).toBe("coffee");
     } finally {
       await app.close();
     }
