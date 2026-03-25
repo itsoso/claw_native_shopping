@@ -7,6 +7,9 @@
   "scripts": {
     "dev": "pnpm --filter @claw/browser-extension dev",
     "build": "pnpm --filter @claw/browser-extension build",
+    "dev:web": "pnpm --filter @claw/web dev",
+    "start:web": "pnpm --filter @claw/web start",
+    "build:web": "pnpm --filter @claw/web build",
     "test": "vitest run",
     "test:e2e": "playwright test tests/e2e/product-page.spec.ts tests/e2e/cart-page.spec.ts",
     "lint": "eslint .",
@@ -31,6 +34,7 @@
     "react-dom": "^19.2.4",
     "tsx": "^4.20.6",
     "typescript": "^5.8.2",
+    "vite": "^7.1.10",
     "vitest": "^3.1.1"
   },
   "dependencies": {
