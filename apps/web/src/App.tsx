@@ -5,6 +5,7 @@ import { Hero } from "./components/Hero.js";
 import { ExplanationPanel } from "./components/ExplanationPanel.js";
 import { OpsDock } from "./components/OpsDock.js";
 import { ScenarioPicker } from "./components/ScenarioPicker.js";
+import { createLiveRuntime } from "./runtime/liveRuntime.js";
 import { runDemoScenario } from "./runtime/demoRuntime.js";
 import type {
   RunViewModel,
@@ -17,6 +18,13 @@ import { demoScenarios } from "./scenarios/index.js";
 const DEFAULT_SCENARIO_ID = demoScenarios[0]?.id ?? "replenish-laundry";
 const DEFAULT_MODE: ScenarioMode = "time_saving";
 const DEFAULT_RUNTIME: ValidationRuntime = "demo";
+const LIVE_API_BASE_URL = "http://127.0.0.1:3000";
+const LIVE_SELLER_BASE_URL = "http://127.0.0.1:3100";
+
+const liveRuntime = createLiveRuntime({
+  apiBaseUrl: LIVE_API_BASE_URL,
+  sellerBaseUrl: LIVE_SELLER_BASE_URL,
+});
 
 const runtimeState = {
   runtime: DEFAULT_RUNTIME,
@@ -45,6 +53,7 @@ export function App() {
   );
   const [runViewModel, setRunViewModel] = useState<RunViewModel | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [runtimeFailureMessage, setRuntimeFailureMessage] = useState<string | null>(null);
 
   const activeScenario =
     demoScenarios.find((scenario) => scenario.id === selectedScenarioId) ?? demoScenarios[0];
@@ -62,6 +71,7 @@ export function App() {
     };
     setSelectedScenarioId(scenarioId);
     setRunViewModel(null);
+    setRuntimeFailureMessage(null);
   };
 
   const handleModeChange = (mode: ScenarioMode): void => {
@@ -72,6 +82,7 @@ export function App() {
     };
     setSelectedMode(mode);
     setRunViewModel(null);
+    setRuntimeFailureMessage(null);
   };
 
   const handleRuntimeChange = (runtime: ValidationRuntime): void => {
@@ -82,23 +93,47 @@ export function App() {
     };
     setSelectedRuntime(runtime);
     setRunViewModel(null);
+    setRuntimeFailureMessage(null);
   };
 
   const handleRun = async (): Promise<void> => {
     const requestId = ++runRequestIdRef.current;
     const requestSnapshot = { ...currentIntentRef.current };
     setIsRunning(true);
+    setRuntimeFailureMessage(null);
+
+    const intentIsCurrent = (): boolean =>
+      runRequestIdRef.current === requestId &&
+      currentIntentRef.current.scenarioId === requestSnapshot.scenarioId &&
+      currentIntentRef.current.mode === requestSnapshot.mode &&
+      currentIntentRef.current.runtime === requestSnapshot.runtime;
 
     try {
-      const result = await runDemoScenario(selectedScenarioId, selectedMode);
-      const intentIsCurrent =
-        runRequestIdRef.current === requestId &&
-        currentIntentRef.current.scenarioId === requestSnapshot.scenarioId &&
-        currentIntentRef.current.mode === requestSnapshot.mode &&
-        currentIntentRef.current.runtime === requestSnapshot.runtime;
+      const result =
+        requestSnapshot.runtime === "live"
+          ? await liveRuntime.run(requestSnapshot.scenarioId, requestSnapshot.mode)
+          : await runDemoScenario(requestSnapshot.scenarioId, requestSnapshot.mode);
 
       if (intentIsCurrent) {
         setRunViewModel(result);
+      }
+    } catch (error) {
+      if (!intentIsCurrent()) {
+        return;
+      }
+
+      if (requestSnapshot.runtime === "live") {
+        setRunViewModel(null);
+        setSelectedRuntime("demo");
+        currentIntentRef.current = {
+          ...currentIntentRef.current,
+          runtime: "demo",
+        };
+        setRuntimeFailureMessage("服务不可用，已切回 Demo。");
+      } else {
+        setRuntimeFailureMessage(
+          error instanceof Error ? error.message : "演示运行失败，请稍后重试。",
+        );
       }
     } finally {
       if (runRequestIdRef.current === requestId) {
@@ -146,11 +181,17 @@ export function App() {
           />
         </section>
       ) : (
-        <section className="empty-run panel">
-          <p className="empty-run__eyebrow">Demo path</p>
-          <h2>先选择一个场景，再点击开始演示。</h2>
+        <section className="empty-run panel" role="status" aria-live="polite">
+          <p className="empty-run__eyebrow">
+            {runtimeFailureMessage ? "Runtime fallback" : "Demo path"}
+          </p>
+          <h2>
+            {runtimeFailureMessage ?? "先选择一个场景，再点击开始演示。"}
+          </h2>
           <p>
-            当前页面会保持在展示和控制之间的平衡：上方讲清产品，下方在运行后显示可验证的决策链。
+            {runtimeFailureMessage
+              ? "当前页面已回到 Demo 模式，你可以继续演示、切换场景，或稍后再尝试 Live。"
+              : "当前页面会保持在展示和控制之间的平衡：上方讲清产品，下方在运行后显示可验证的决策链。"}
           </p>
         </section>
       )}

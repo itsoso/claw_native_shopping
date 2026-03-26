@@ -37,11 +37,9 @@ export function OpsDock({ health, onRuntimeSelect, runtime }: OpsDockProps) {
         </button>
         <button
           className="mode-chip mode-chip--runtime"
-          disabled
           data-active={runtime === "live"}
           aria-pressed={runtime === "live"}
           type="button"
-          title="Live runtime will be wired in Task 7"
           onClick={() => onRuntimeSelect("live")}
         >
           Live
