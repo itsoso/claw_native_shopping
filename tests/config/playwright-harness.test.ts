@@ -10,6 +10,7 @@ import playwrightConfig, {
 describe("playwright e2e harness", () => {
   it("only starts the web preview server when the web console spec is selected", async () => {
     expect(playwrightConfig.globalSetup).toBe("./tests/e2e/globalSetup.ts");
+    expect(playwrightConfig.testMatch).toBe("**/*.spec.ts");
 
     expect(
       shouldStartWebPreview(["node", "playwright", "test"]),

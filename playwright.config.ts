@@ -53,6 +53,7 @@ export const buildWebServers = (
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  testMatch: "**/*.spec.ts",
   globalSetup: "./tests/e2e/globalSetup.ts",
   use: {
     baseURL: `http://127.0.0.1:${FIXTURE_PORT}`,
