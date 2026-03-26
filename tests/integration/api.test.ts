@@ -129,6 +129,63 @@ describe("buyer api", () => {
     }
   });
 
+  it("applies scenario and mode to the live procurement snapshot", async () => {
+    const seller = buildSellerSimServer();
+    await seller.listen({ host: "127.0.0.1", port: 0 });
+    const sellerAddress = seller.server.address();
+    if (!sellerAddress || typeof sellerAddress === "string") {
+      throw new Error("seller_address_unavailable");
+    }
+
+    const app = buildServer({
+      sellerBaseUrl: `http://127.0.0.1:${sellerAddress.port}`,
+    });
+
+    try {
+      const replenishResponse = await app.inject({
+        method: "POST",
+        url: "/intents/replenish",
+        payload: {
+          scenarioId: "seller-eta-tradeoff",
+          mode: "value",
+        },
+      });
+
+      expect(replenishResponse.statusCode).toBe(200);
+
+      const replenish = replenishResponse.json() as { orderId: string };
+      const explanationResponse = await app.inject({
+        method: "GET",
+        url: `/orders/${replenish.orderId}/explanation`,
+      });
+
+      expect(explanationResponse.statusCode).toBe(200);
+
+      const explanation = explanationResponse.json() as {
+        explanation: Array<{ type: string }>;
+        snapshot: {
+          selectedScenarioId: string;
+          selectedMode: string;
+          requestedCategory: string;
+          requestedQuantity: number;
+          budgetLimit: number;
+        };
+      };
+
+      expect(explanation.explanation.map((event) => event.type)).toContain(
+        "REQUEST_PROFILE_APPLIED",
+      );
+      expect(explanation.snapshot.selectedScenarioId).toBe("seller-eta-tradeoff");
+      expect(explanation.snapshot.selectedMode).toBe("value");
+      expect(explanation.snapshot.requestedCategory).toBe("seller-eta-balance");
+      expect(explanation.snapshot.requestedQuantity).toBe(1);
+      expect(explanation.snapshot.budgetLimit).toBe(45);
+    } finally {
+      await app.close();
+      await seller.close();
+    }
+  });
+
   it("fails explicitly when the configured seller service is unavailable", async () => {
     const app = buildServer({
       sellerBaseUrl: "http://127.0.0.1:9",

@@ -22,6 +22,10 @@ test("runs the default demo scenario in the web validation console", async ({
 test("runs the live scenario in the web validation console", async ({ page }) => {
   await page.goto("/");
 
+  await page.getByRole("button", { name: "更划算" }).click();
+  await page
+    .getByRole("button", { name: /seller-eta-tradeoff/i })
+    .click();
   await page.getByRole("button", { name: "Live" }).click();
   await page.getByRole("button", { name: "开始演示" }).click();
 
@@ -37,5 +41,7 @@ test("runs the live scenario in the web validation console", async ({ page }) =>
   await expect(
     page.getByText(/seller-sim returned quote, hold, and commit data/i),
   ).toBeVisible();
+  await expect(page.getByText(/seller-eta-balance/i)).toBeVisible();
+  await expect(page.getByText(/budget 45/i)).toBeVisible();
   await expect(page.getByText("服务不可用，已切回 Demo。")).toHaveCount(0);
 });

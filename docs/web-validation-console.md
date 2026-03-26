@@ -67,20 +67,20 @@ OPENCLAW_LIVE_SELLER_TARGET=http://127.0.0.1:4301 \
 pnpm dev:web
 ```
 
-When you switch to `Live`, the health cards stay `Unknown` until you click `开始演示`. That click is where the runtime would begin its live sequence:
+When you switch to `Live`, the health cards stay `Unknown` until you click `开始演示`. That click now sends the selected scenario and mode into the real buyer API request and begins the live sequence:
 
 1. probes `/health` on both services
-2. posts to `POST /intents/replenish`
+2. posts to `POST /intents/replenish` with the chosen `scenarioId` and `mode`
 3. reads `GET /orders/:id/explanation`
 4. maps the live responses back into the same timeline UI
 
-Today the live request path is a fixed local replenishment flow. The selected scenario and mode still shape the summary and other UI framing, but they only affect the presentation copy on screen and do not change the backend request body yet. 换句话说，当前选择只影响页面上的演示文案，不改变 Live 请求本身。如果任一服务不可用，页面会自动回退到 `Demo`，而不是留在空白或错误状态。
+Today the live request path is still a fixed local replenishment flow, but the selected scenario and mode now affect the backend request profile as well as the surrounding UI framing. 换句话说，当前选择已经进入 Live 请求本身，而不只是页面上的演示文案。如果任一服务不可用，页面会自动回退到 `Demo`，而不是留在空白或错误状态。
 
 Current implementation limits:
 
 - seller-sim now participates in the real replenishment path for quote, hold, and commit
 - the Live path is still a fixed replenishment flow, not a dynamic multi-seller marketplace
-- the chosen scenario and mode still shape presentation copy more than backend request structure
+- the chosen scenario and mode now change the request profile, but they do not yet introduce a fully dynamic marketplace search
 
 ## Investor Walkthrough
 
@@ -92,7 +92,7 @@ For a short 投资人 demo, use this order:
 4. Point at the `Runtime State` block to show that the system can switch between Demo and Live.
 5. Switch to `Live`, click `开始演示`, and explain that the page is now using the local buyer API and seller-sim through Vite's same-origin proxy.
 6. Explain that Live now validates a real buyer API to seller-sim replenishment path, including seller quote, hold, and commit.
-7. Explain that the path is still fixed and local, while the chosen scenario and mode mainly affect the presentation copy shown around that path.
+7. Explain that the chosen scenario and mode now change the request profile sent to the buyer API, while the overall path is still fixed and local.
 8. If your local backend targets differ from the defaults, restart the web app with `OPENCLAW_LIVE_API_TARGET` and `OPENCLAW_LIVE_SELLER_TARGET` so the same browser walkthrough still works.
 
 ## Validation Commands

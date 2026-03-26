@@ -37,7 +37,7 @@ pnpm dev:api
 pnpm dev:seller-sim
 ```
 
-Then open the Vite URL shown by `pnpm dev:web` and keep the page in `Demo` for a stable story, or switch to `Live` and click `开始演示` for the local browser path. `pnpm preview:web` supports the same local Live flow. If you need non-default backend targets, override the proxy with `OPENCLAW_LIVE_API_TARGET` and `OPENCLAW_LIVE_SELLER_TARGET` before starting the web app. seller-sim now participates in the real replenishment path for quote, hold, and commit, while the selected scenario and mode still shape the surrounding presentation copy. The full walkthrough lives in [`docs/web-validation-console.md`](docs/web-validation-console.md).
+Then open the Vite URL shown by `pnpm dev:web` and keep the page in `Demo` for a stable story, or switch to `Live` and click `开始演示` for the local browser path. `pnpm preview:web` supports the same local Live flow. If you need non-default backend targets, override the proxy with `OPENCLAW_LIVE_API_TARGET` and `OPENCLAW_LIVE_SELLER_TARGET` before starting the web app. seller-sim now participates in the real replenishment path for quote, hold, and commit, and the selected scenario and mode are forwarded into the real Live buyer API request instead of only changing copy around the page. The full walkthrough lives in [`docs/web-validation-console.md`](docs/web-validation-console.md).
 
 ## Load In Chrome
 

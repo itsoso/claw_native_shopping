@@ -1,6 +1,7 @@
 import { createMemoryStore, type MemoryStore, type OrderSnapshot } from "../../../packages/memory/src/store.js";
 import { evaluatePolicy } from "../../../packages/policy-engine/src/evaluate.js";
 import { planDemand } from "../../../packages/demand-planner/src/plan.js";
+import type { DemandPlannerInput } from "../../../packages/demand-planner/src/types.js";
 import { rankOffers } from "../../../packages/offer-evaluator/src/score.js";
 import type { SellerProtocolPort } from "../../../packages/seller-protocol/src/port.js";
 import {
@@ -15,6 +16,11 @@ import { createProcurementMachine } from "./machine.js";
 export type ProcurementScenarioFixture = {
   inventoryHoldShouldFail?: boolean;
   policyAutoApproveLimit?: number;
+  planningInput?: DemandPlannerInput;
+  requestMetadata?: {
+    scenarioId?: string;
+    mode?: string;
+  };
   store?: MemoryStore;
   sellerPort?: SellerProtocolPort;
 };
@@ -126,22 +132,40 @@ export const runProcurementScenario = async (
   let state = machine.initialState;
   state = machine.transition(state, { type: "QUOTE_COLLECTION" });
 
-  const [intent] = planDemand({
-    inventory: [{ sku: "egg-12", quantityOnHand: 2, reorderPoint: 4 }],
-    catalogMap: {
-      "egg-12": { category: "eggs", normalizedAttributes: { count: 12 } }
-    },
-    planningDefaults: {
-      deliveryWindowLatestAt: "2026-03-24T09:00:00+08:00",
-      budgetLimit: 40
-    }
-  });
+  const planningInput =
+    fixture.planningInput ?? {
+      inventory: [{ sku: "egg-12", quantityOnHand: 2, reorderPoint: 4 }],
+      catalogMap: {
+        "egg-12": { category: "eggs", normalizedAttributes: { count: 12 } }
+      },
+      planningDefaults: {
+        deliveryWindowLatestAt: "2026-03-24T09:00:00+08:00",
+        budgetLimit: 40
+      }
+    };
+
+  const [intent] = planDemand(planningInput);
 
   if (!intent) {
     throw new Error("no_demand_intent");
   }
 
   const orderId = `order_${intent.id}`;
+  const snapshotContext = {
+    selectedScenarioId: fixture.requestMetadata?.scenarioId,
+    selectedMode: fixture.requestMetadata?.mode,
+    requestedCategory: intent.category,
+    requestedQuantity: intent.quantity,
+    budgetLimit: intent.budgetLimit,
+    deliveryWindowLatestAt: intent.deliveryWindow.latestAt
+  };
+
+  if (fixture.requestMetadata?.scenarioId || fixture.requestMetadata?.mode) {
+    store.appendAuditEvent(orderId, {
+      type: "REQUEST_PROFILE_APPLIED",
+      ...snapshotContext
+    });
+  }
 
   const rfq = RFQSchema.parse({
     rfqId: intent.id,
@@ -199,7 +223,8 @@ export const runProcurementScenario = async (
       rfqId: rfq.rfqId,
       quoteId: quote.quoteId,
       sellerAgentId: quote.sellerAgentId,
-      decision: policyEvaluation.decision
+      decision: policyEvaluation.decision,
+      ...snapshotContext
     };
     store.setOrderSnapshot(snapshot);
 
@@ -227,7 +252,8 @@ export const runProcurementScenario = async (
       quoteId: quote.quoteId,
       sellerAgentId: quote.sellerAgentId,
       totalAmount: quoteTotal,
-      policyDecision: policyEvaluation.decision
+      policyDecision: policyEvaluation.decision,
+      ...snapshotContext
     };
     store.setOrderSnapshot(snapshot);
 
@@ -257,7 +283,8 @@ export const runProcurementScenario = async (
       orderId,
       status: state.value,
       rfqId: rfq.rfqId,
-      quoteId: quote.quoteId
+      quoteId: quote.quoteId,
+      ...snapshotContext
     };
     store.setOrderSnapshot(snapshot);
 
@@ -300,7 +327,8 @@ export const runProcurementScenario = async (
     holdId: hold.holdId,
     sellerAgentId: quote.sellerAgentId,
     totalAmount: quoteTotal,
-    policyDecision: policyEvaluation.decision
+    policyDecision: policyEvaluation.decision,
+    ...snapshotContext
   };
   store.setOrderSnapshot(snapshot);
 

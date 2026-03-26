@@ -19,7 +19,16 @@ describe("live runtime", () => {
           JSON.stringify({
             orderId: "order_1",
             explanation: [{ event: "decision_made" }],
-            snapshot: { orderId: "order_1", status: "committed" },
+            snapshot: {
+              orderId: "order_1",
+              status: "committed",
+              selectedScenarioId: "replenish-laundry",
+              selectedMode: "safe",
+              requestedCategory: "laundry-detergent",
+              requestedQuantity: 2,
+              budgetLimit: 100,
+              deliveryWindowLatestAt: "2026-03-24T12:00:00+08:00",
+            },
           }),
         ),
       );
@@ -34,6 +43,13 @@ describe("live runtime", () => {
     expect(fetchMock).toHaveBeenNthCalledWith(2, "/seller/live/health");
     expect(fetchMock).toHaveBeenNthCalledWith(3, "/api/live/intents/replenish", {
       method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        scenarioId: "replenish-laundry",
+        mode: "safe",
+      }),
     });
     expect(fetchMock).toHaveBeenNthCalledWith(4, "/api/live/orders/order_1/explanation");
   });
@@ -53,7 +69,17 @@ describe("live runtime", () => {
           JSON.stringify({
             orderId: "order_1",
             explanation: [{ event: "decision_made" }],
-            snapshot: { orderId: "order_1", status: "committed" },
+            snapshot: {
+              orderId: "order_1",
+              status: "committed",
+              selectedScenarioId: "seller-eta-tradeoff",
+              selectedMode: "safe",
+              requestedCategory: "seller-eta-balance",
+              requestedQuantity: 1,
+              budgetLimit: 55,
+              deliveryWindowLatestAt: "2026-03-24T12:00:00+08:00",
+              sellerAgentId: "seller_1",
+            },
           }),
         ),
       );
@@ -72,8 +98,14 @@ describe("live runtime", () => {
     expect(result.explanationTags).toEqual(
       demoScenarioFixtures["replenish-laundry"].explanationTags,
     );
+    expect(result.steps.find((step) => step.id === "demand")?.detail).toContain(
+      "seller-eta-balance",
+    );
+    expect(result.steps.find((step) => step.id === "decision")?.detail).toContain(
+      "55",
+    );
     expect(result.steps.find((step) => step.id === "seller-order")?.detail).toContain(
-      "seller-sim",
+      "seller_1",
     );
     expect(result.steps.find((step) => step.id === "explanation")?.detail).toContain(
       "decision_made",

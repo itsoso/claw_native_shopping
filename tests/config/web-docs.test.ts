@@ -26,13 +26,15 @@ describe("web validation docs", () => {
     expect(docs).toContain("投资人");
     expect(docs).toContain("开始演示");
     expect(docs).toContain("Unknown");
-    expect(docs).toContain("只影响页面上的演示文案");
+    expect(docs).toContain("已经进入 Live 请求本身");
     expect(docs).toContain("same-origin proxy");
     expect(docs).toContain("pnpm preview:web");
     expect(docs).toContain("OPENCLAW_LIVE_API_TARGET");
     expect(docs).toContain("OPENCLAW_LIVE_SELLER_TARGET");
     expect(docs).toContain("seller-sim now participates in the real replenishment path");
     expect(docs).toContain("quote, hold, and commit");
+    expect(docs).toContain("scenario and mode");
+    expect(docs).toContain("POST /intents/replenish");
     expect(docs).toContain("pnpm test");
     expect(docs).toContain("pnpm test:e2e");
     expect(docs).not.toContain("still needs a same-origin proxy or explicit `CORS` support");

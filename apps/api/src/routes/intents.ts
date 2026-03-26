@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
+import { LiveReplenishmentRequestSchema } from "../../../../packages/contracts/src/live-replenishment.js";
 import type { MemoryStore } from "../../../../packages/memory/src/store.js";
+import { buildLiveProcurementProfile } from "../../../../packages/orchestrator/src/liveProfiles.js";
 import { runProcurementScenario } from "../../../../packages/orchestrator/src/service.js";
 import type { SellerProtocolPort } from "../../../../packages/seller-protocol/src/port.js";
 
@@ -15,8 +17,22 @@ export const registerIntentRoutes = (
     };
   });
 
-  app.post("/intents/replenish", async () => {
-    const result = await runProcurementScenario({ store, sellerPort });
+  app.post("/intents/replenish", async (request) => {
+    const payload = LiveReplenishmentRequestSchema.parse({
+      scenarioId: "replenish-laundry",
+      mode: "time_saving",
+      ...((typeof request.body === "object" && request.body !== null)
+        ? (request.body as Record<string, unknown>)
+        : {}),
+    });
+    const profile = buildLiveProcurementProfile(payload);
+    const result = await runProcurementScenario({
+      store,
+      sellerPort,
+      planningInput: profile.planningInput,
+      policyAutoApproveLimit: profile.policyAutoApproveLimit,
+      requestMetadata: profile.requestMetadata,
+    });
 
     return result;
   });

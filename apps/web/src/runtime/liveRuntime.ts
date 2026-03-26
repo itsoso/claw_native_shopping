@@ -1,4 +1,5 @@
 import { getDemoScenarioFixture, getDemoScenarioSummary } from "../scenarios/index.js";
+import type { LiveReplenishmentRequest } from "../../../../packages/contracts/src/live-replenishment.js";
 import type {
   LiveRuntime,
   LiveRuntimeOptions,
@@ -25,6 +26,13 @@ type LiveExplanationResponse = {
   snapshot?: {
     orderId?: string;
     status?: string;
+    selectedScenarioId?: string;
+    selectedMode?: string;
+    requestedCategory?: string;
+    requestedQuantity?: number;
+    budgetLimit?: number;
+    deliveryWindowLatestAt?: string;
+    sellerAgentId?: string;
   };
 };
 
@@ -85,27 +93,37 @@ const buildLiveSteps = (
   scenarioId: ScenarioId,
   mode: ScenarioMode,
   orderId: string,
-  snapshotStatus: string,
+  snapshot: NonNullable<LiveExplanationResponse["snapshot"]>,
   explanationEvents: readonly string[],
 ): RunStepViewModel[] => {
   const scenario = getDemoScenarioFixture(scenarioId);
+  const requestedCategory = snapshot.requestedCategory ?? "unknown-category";
+  const requestedQuantity = snapshot.requestedQuantity ?? "unknown-quantity";
+  const budgetLimit = snapshot.budgetLimit ?? "unknown-budget";
+  const deliveryWindowLatestAt = snapshot.deliveryWindowLatestAt ?? "unknown-window";
+  const sellerAgentId = snapshot.sellerAgentId ?? "unknown-seller";
+  const snapshotStatus = snapshot.status ?? "unknown";
 
   return [
     createStep(
       "demand",
       "Demand",
-      `${scenario.title}: buyer API accepted the live request and opened a seller-sim replenishment run.`,
+      `${scenario.title}: buyer API requested ${requestedQuantity} x ${requestedCategory} for a seller-sim replenishment run.`,
     ),
-    createStep("decision", "Decision", `Mode ${mode} mapped to a live decision path.`),
+    createStep(
+      "decision",
+      "Decision",
+      `Mode ${mode} mapped to budget ${budgetLimit} with delivery target ${deliveryWindowLatestAt}.`,
+    ),
     createStep(
       "cart-plan",
       "Cart Plan",
-      `Live order ${orderId} was prepared through the buyer API orchestration path.`,
+      `Live order ${orderId} was prepared through the buyer API orchestration path for scenario ${snapshot.selectedScenarioId ?? scenarioId}.`,
     ),
     createStep(
       "seller-order",
       "Seller Order",
-      `seller-sim returned quote, hold, and commit data; snapshot status reported as ${snapshotStatus}.`,
+      `seller-sim returned quote, hold, and commit data from ${sellerAgentId}; snapshot status reported as ${snapshotStatus}.`,
     ),
     createStep(
       "explanation",
@@ -124,6 +142,10 @@ export const createLiveRuntime = (options: LiveRuntimeOptions): LiveRuntime => {
 
   return {
     async run(scenarioId, mode) {
+      const liveRequest: LiveReplenishmentRequest = {
+        scenarioId,
+        mode,
+      };
       const [apiHealthResponse, sellerHealthResponse] = await Promise.all([
         fetchImpl(buildUrl(apiBaseUrl, "/health")),
         fetchImpl(buildUrl(sellerBaseUrl, "/health")),
@@ -139,7 +161,13 @@ export const createLiveRuntime = (options: LiveRuntimeOptions): LiveRuntime => {
 
       const replenishResponse = await fetchImpl(
         buildUrl(apiBaseUrl, "/intents/replenish"),
-        { method: "POST" },
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(liveRequest),
+        },
       );
       const replenish = await parseJsonResponse<LiveIntentResponse>(
         replenishResponse,
@@ -166,7 +194,7 @@ export const createLiveRuntime = (options: LiveRuntimeOptions): LiveRuntime => {
           scenarioId,
           mode,
           replenish.orderId,
-          explanation.snapshot?.status ?? "unknown",
+          explanation.snapshot ?? {},
           explanationEvents,
         ),
         explanationTags: scenario.explanationTags,
