@@ -41,8 +41,8 @@ export type ServiceHealthViewModel = {
 };
 
 export type LiveRuntimeOptions = {
-  apiBaseUrl: string;
-  sellerBaseUrl: string;
+  apiBaseUrl?: string;
+  sellerBaseUrl?: string;
   fetch?: typeof fetch;
 };
 

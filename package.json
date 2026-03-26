@@ -10,7 +10,7 @@
     "dev:web": "pnpm --dir apps/web dev",
     "build:web": "pnpm --dir apps/web build",
     "preview:web": "pnpm --dir apps/web exec vite preview --host 127.0.0.1 --port 4174 --strictPort",
-    "preview:web:e2e": "pnpm build:web && pnpm preview:web",
+    "preview:web:e2e": "pnpm build:web && pnpm --dir apps/web exec vite preview --host 127.0.0.1 --port 4274 --strictPort",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "lint": "eslint .",

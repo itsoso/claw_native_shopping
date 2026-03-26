@@ -19,17 +19,12 @@ import { demoScenarios } from "./scenarios/index.js";
 const DEFAULT_SCENARIO_ID = demoScenarios[0]?.id ?? "replenish-laundry";
 const DEFAULT_MODE: ScenarioMode = "time_saving";
 const DEFAULT_RUNTIME: ValidationRuntime = "demo";
-const LIVE_API_BASE_URL = "http://127.0.0.1:3000";
-const LIVE_SELLER_BASE_URL = "http://127.0.0.1:3100";
 type RuntimeHealthState = {
   api: ServiceHealthViewModel;
   seller: ServiceHealthViewModel;
 };
 
-const liveRuntime = createLiveRuntime({
-  apiBaseUrl: LIVE_API_BASE_URL,
-  sellerBaseUrl: LIVE_SELLER_BASE_URL,
-});
+const liveRuntime = createLiveRuntime({});
 
 const runtimeState = {
   runtime: DEFAULT_RUNTIME,

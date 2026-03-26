@@ -1,7 +1,13 @@
 import { defineConfig } from "@playwright/test";
+import {
+  LIVE_API_TARGET_ENV,
+  LIVE_SELLER_TARGET_ENV,
+} from "./apps/web/vite.config.ts";
 
 const FIXTURE_PORT = 4173;
-const WEB_PORT = 4174;
+const WEB_PORT = 4274;
+export const WEB_E2E_API_PORT = 4300;
+export const WEB_E2E_SELLER_PORT = 4301;
 const WEB_SPEC_FILENAME = "web-validation-console.spec.ts";
 const PLAYWRIGHT_OPTIONS_WITH_VALUE = new Set([
   "--browser",
@@ -33,8 +39,29 @@ const buildFixtureServer = () => ({
   timeout: 120_000,
 });
 
+const buildApiServer = () => ({
+  command: `PORT=${WEB_E2E_API_PORT} pnpm start:api`,
+  name: "Buyer API",
+  port: WEB_E2E_API_PORT,
+  reuseExistingServer: false,
+  timeout: 120_000,
+});
+
+const buildSellerSimServer = () => ({
+  command: `PORT=${WEB_E2E_SELLER_PORT} pnpm start:seller-sim`,
+  name: "Seller Sim",
+  port: WEB_E2E_SELLER_PORT,
+  reuseExistingServer: false,
+  timeout: 120_000,
+});
+
+const liveProxyEnvPrefix = [
+  `${LIVE_API_TARGET_ENV}=http://127.0.0.1:${WEB_E2E_API_PORT}`,
+  `${LIVE_SELLER_TARGET_ENV}=http://127.0.0.1:${WEB_E2E_SELLER_PORT}`,
+].join(" ");
+
 const buildWebPreviewServer = () => ({
-  command: "pnpm preview:web:e2e",
+  command: `${liveProxyEnvPrefix} pnpm preview:web:e2e`,
   name: "Web Preview",
   port: WEB_PORT,
   reuseExistingServer: false,
@@ -93,6 +120,7 @@ export const buildWebServers = (
   const servers = [buildFixtureServer()];
 
   if (shouldStartWebPreview(argv)) {
+    servers.push(buildApiServer(), buildSellerSimServer());
     servers.push(buildWebPreviewServer());
   }
 

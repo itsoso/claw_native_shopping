@@ -28,6 +28,9 @@ type LiveExplanationResponse = {
   };
 };
 
+const DEFAULT_LIVE_API_BASE_URL = "/api/live";
+const DEFAULT_LIVE_SELLER_BASE_URL = "/seller/live";
+
 const createStep = (
   id: RunStepViewModel["id"],
   title: string,
@@ -39,8 +42,14 @@ const createStep = (
   detail,
 });
 
-const buildUrl = (baseUrl: string, path: string): string =>
-  new URL(path, baseUrl).toString();
+const buildUrl = (baseUrl: string, path: string): string => {
+  if (baseUrl.startsWith("http://") || baseUrl.startsWith("https://")) {
+    return new URL(path, baseUrl).toString();
+  }
+
+  const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
+  return `${normalizedBaseUrl}${path}`;
+};
 
 const normalizeHealth = (
   payload: HealthProbeResponse,
@@ -98,12 +107,14 @@ const buildLiveSteps = (
 
 export const createLiveRuntime = (options: LiveRuntimeOptions): LiveRuntime => {
   const fetchImpl = options.fetch ?? fetch;
+  const apiBaseUrl = options.apiBaseUrl ?? DEFAULT_LIVE_API_BASE_URL;
+  const sellerBaseUrl = options.sellerBaseUrl ?? DEFAULT_LIVE_SELLER_BASE_URL;
 
   return {
     async run(scenarioId, mode) {
       const [apiHealthResponse, sellerHealthResponse] = await Promise.all([
-        fetchImpl(buildUrl(options.apiBaseUrl, "/health")),
-        fetchImpl(buildUrl(options.sellerBaseUrl, "/health")),
+        fetchImpl(buildUrl(apiBaseUrl, "/health")),
+        fetchImpl(buildUrl(sellerBaseUrl, "/health")),
       ]);
 
       const [apiHealthPayload, sellerHealthPayload] = await Promise.all([
@@ -115,7 +126,7 @@ export const createLiveRuntime = (options: LiveRuntimeOptions): LiveRuntime => {
       const sellerHealth = normalizeHealth(sellerHealthPayload, "seller-sim");
 
       const replenishResponse = await fetchImpl(
-        buildUrl(options.apiBaseUrl, "/intents/replenish"),
+        buildUrl(apiBaseUrl, "/intents/replenish"),
         { method: "POST" },
       );
       const replenish = await parseJsonResponse<LiveIntentResponse>(
@@ -124,7 +135,7 @@ export const createLiveRuntime = (options: LiveRuntimeOptions): LiveRuntime => {
       );
 
       const explanationResponse = await fetchImpl(
-        buildUrl(options.apiBaseUrl, `/orders/${replenish.orderId}/explanation`),
+        buildUrl(apiBaseUrl, `/orders/${replenish.orderId}/explanation`),
       );
       const explanation = await parseJsonResponse<LiveExplanationResponse>(
         explanationResponse,

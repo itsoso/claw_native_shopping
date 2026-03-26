@@ -27,7 +27,7 @@ pnpm dev
 
 ## OpenClaw Web Validation Console
 
-The repository also ships a single-page validation console for investor demos and internal verification. It keeps the story and the live system on the same screen: default `Demo` mode is stable and repeatable, while `Live` mode is currently documented as a fixed local replenishment integration target rather than a fully browser-runnable path.
+The repository also ships a single-page validation console for investor demos and internal verification. It keeps the story and the live system on the same screen: default `Demo` mode is stable and repeatable, while `Live` mode is browser-runnable in local Vite `dev` and `preview` through the app's built-in same-origin proxy.
 
 Start the console and local services in separate terminals:
 
@@ -37,7 +37,7 @@ pnpm dev:api
 pnpm dev:seller-sim
 ```
 
-Then open the Vite URL shown by `pnpm dev:web` and keep the page in `Demo` for a stable story. The current repo does not yet ship the browser-side same-origin proxy / `CORS` wiring needed for a real Live browser run, and seller-sim is currently health-checked separately rather than used in the live replenishment path itself. The full walkthrough lives in [`docs/web-validation-console.md`](docs/web-validation-console.md).
+Then open the Vite URL shown by `pnpm dev:web` and keep the page in `Demo` for a stable story, or switch to `Live` and click `开始演示` for the local browser path. `pnpm preview:web` supports the same local Live flow. If you need non-default backend targets, override the proxy with `OPENCLAW_LIVE_API_TARGET` and `OPENCLAW_LIVE_SELLER_TARGET` before starting the web app. seller-sim is still health-checked separately and does not yet participate in the live replenishment path itself. The full walkthrough lives in [`docs/web-validation-console.md`](docs/web-validation-console.md).
 
 ## Load In Chrome
 

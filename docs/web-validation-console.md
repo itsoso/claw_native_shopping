@@ -23,7 +23,7 @@ Run the console:
 pnpm dev:web
 ```
 
-The Vite server prints the local URL in the terminal. Open that URL in a browser and keep the page on screen during the walkthrough.
+The Vite server prints the local URL in the terminal. Open that URL in a browser and keep the page on screen during the walkthrough. `pnpm preview:web` exposes the same UI and the same local Live path.
 
 ## Runtime Modes
 
@@ -45,7 +45,7 @@ Use Demo when you need a stable story:
 
 ### Live
 
-`Live` keeps the same UI but is currently best understood as a local integration target, not a fully browser-runnable path in this repo snapshot.
+`Live` keeps the same UI and is browser-runnable in local Vite `dev` and `preview`.
 
 Start the services in separate terminals:
 
@@ -54,10 +54,18 @@ pnpm dev:api
 pnpm dev:seller-sim
 ```
 
-The page expects these local endpoints:
+The page uses a built-in same-origin proxy and expects these default local endpoints behind it:
 
 - buyer API: `http://127.0.0.1:3000/health`
 - seller simulator: `http://127.0.0.1:3100/health`
+
+If those ports are not suitable in your environment, override the proxy targets before starting the web app:
+
+```bash
+OPENCLAW_LIVE_API_TARGET=http://127.0.0.1:4300 \
+OPENCLAW_LIVE_SELLER_TARGET=http://127.0.0.1:4301 \
+pnpm dev:web
+```
 
 When you switch to `Live`, the health cards stay `Unknown` until you click `开始演示`. That click is where the runtime would begin its live sequence:
 
@@ -70,7 +78,6 @@ Today the live request path is a fixed local replenishment flow. The selected sc
 
 Current implementation limits:
 
-- the browser app still needs a same-origin proxy or explicit `CORS` support before a real Live browser run can call those local services directly
 - seller-sim 目前只参与 health probe，不参与当前 Live 补货路径里的实际下单编排
 - the replenishment path itself still completes inside the buyer API's in-process fixture adapter
 
@@ -82,10 +89,10 @@ For a short 投资人 demo, use this order:
 2. State the product in one line: OpenClaw is not a recommendation widget, it is a消费决策代理.
 3. Click `开始演示` and narrate the five-step timeline from left to right.
 4. Point at the `Runtime State` block to show that the system can switch between Demo and Live.
-5. Switch to `Live` and explain that the page is wired to the buyer API and seller-sim endpoints, but the repo still needs same-origin proxy / `CORS` wiring before a real browser Live run is dependable.
+5. Switch to `Live`, click `开始演示`, and explain that the page is now using the local buyer API and seller-sim through Vite's same-origin proxy.
 6. Explain that Live currently validates a fixed local replenishment path, while the chosen scenario and mode only affect the presentation copy shown around that path.
 7. Call out that seller-sim 目前只参与 health probe，真实补货链路仍在 buyer API 的本地 fixture adapter 内完成。
-8. If you have added local proxy or `CORS` wiring in your environment, you can click `开始演示` and watch the health cards move away from `Unknown`. If not, keep the on-screen walkthrough in `Demo` and use the local tests to prove the Live path behavior.
+8. If your local backend targets differ from the defaults, restart the web app with `OPENCLAW_LIVE_API_TARGET` and `OPENCLAW_LIVE_SELLER_TARGET` so the same browser walkthrough still works.
 
 ## Validation Commands
 
@@ -96,4 +103,4 @@ pnpm test
 pnpm test:e2e
 ```
 
-`pnpm test` includes the doc guards and web runtime unit tests. `pnpm test:e2e` runs the Playwright suite, including the browser smoke test for the web console. At the moment, those automated checks are the reliable way to validate the Live path behavior until same-origin proxy / `CORS` support is added for the browser app.
+`pnpm test` includes the doc guards and web runtime unit tests. `pnpm test:e2e` runs the Playwright suite, including the browser smoke test for the web console in both `Demo` and `Live`. The Live browser test now starts isolated buyer API and seller-sim ports and injects them into the web proxy so the check does not depend on whatever may already be running on `3000` or `3100`.
