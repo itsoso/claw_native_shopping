@@ -40,7 +40,7 @@ const buildFixtureServer = () => ({
 });
 
 const buildApiServer = () => ({
-  command: `PORT=${WEB_E2E_API_PORT} pnpm start:api`,
+  command: `PORT=${WEB_E2E_API_PORT} SELLER_SIM_BASE_URL=http://127.0.0.1:${WEB_E2E_SELLER_PORT} pnpm start:api`,
   name: "Buyer API",
   port: WEB_E2E_API_PORT,
   reuseExistingServer: false,

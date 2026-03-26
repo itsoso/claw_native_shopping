@@ -78,8 +78,9 @@ Today the live request path is a fixed local replenishment flow. The selected sc
 
 Current implementation limits:
 
-- seller-sim 目前只参与 health probe，不参与当前 Live 补货路径里的实际下单编排
-- the replenishment path itself still completes inside the buyer API's in-process fixture adapter
+- seller-sim now participates in the real replenishment path for quote, hold, and commit
+- the Live path is still a fixed replenishment flow, not a dynamic multi-seller marketplace
+- the chosen scenario and mode still shape presentation copy more than backend request structure
 
 ## Investor Walkthrough
 
@@ -90,8 +91,8 @@ For a short 投资人 demo, use this order:
 3. Click `开始演示` and narrate the five-step timeline from left to right.
 4. Point at the `Runtime State` block to show that the system can switch between Demo and Live.
 5. Switch to `Live`, click `开始演示`, and explain that the page is now using the local buyer API and seller-sim through Vite's same-origin proxy.
-6. Explain that Live currently validates a fixed local replenishment path, while the chosen scenario and mode only affect the presentation copy shown around that path.
-7. Call out that seller-sim 目前只参与 health probe，真实补货链路仍在 buyer API 的本地 fixture adapter 内完成。
+6. Explain that Live now validates a real buyer API to seller-sim replenishment path, including seller quote, hold, and commit.
+7. Explain that the path is still fixed and local, while the chosen scenario and mode mainly affect the presentation copy shown around that path.
 8. If your local backend targets differ from the defaults, restart the web app with `OPENCLAW_LIVE_API_TARGET` and `OPENCLAW_LIVE_SELLER_TARGET` so the same browser walkthrough still works.
 
 ## Validation Commands

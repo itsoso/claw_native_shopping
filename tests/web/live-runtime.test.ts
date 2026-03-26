@@ -72,6 +72,9 @@ describe("live runtime", () => {
     expect(result.explanationTags).toEqual(
       demoScenarioFixtures["replenish-laundry"].explanationTags,
     );
+    expect(result.steps.find((step) => step.id === "seller-order")?.detail).toContain(
+      "seller-sim",
+    );
     expect(result.steps.find((step) => step.id === "explanation")?.detail).toContain(
       "decision_made",
     );

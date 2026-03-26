@@ -91,10 +91,22 @@ const buildLiveSteps = (
   const scenario = getDemoScenarioFixture(scenarioId);
 
   return [
-    createStep("demand", "Demand", `${scenario.title}: buyer API accepted the live request.`),
+    createStep(
+      "demand",
+      "Demand",
+      `${scenario.title}: buyer API accepted the live request and opened a seller-sim replenishment run.`,
+    ),
     createStep("decision", "Decision", `Mode ${mode} mapped to a live decision path.`),
-    createStep("cart-plan", "Cart Plan", `Live order ${orderId} was prepared for execution.`),
-    createStep("seller-order", "Seller Order", `Snapshot status reported as ${snapshotStatus}.`),
+    createStep(
+      "cart-plan",
+      "Cart Plan",
+      `Live order ${orderId} was prepared through the buyer API orchestration path.`,
+    ),
+    createStep(
+      "seller-order",
+      "Seller Order",
+      `seller-sim returned quote, hold, and commit data; snapshot status reported as ${snapshotStatus}.`,
+    ),
     createStep(
       "explanation",
       "Explanation",

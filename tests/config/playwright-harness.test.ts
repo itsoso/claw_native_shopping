@@ -135,6 +135,9 @@ describe("playwright e2e harness", () => {
     expect(apiServer?.port).toBe(WEB_E2E_API_PORT);
     expect(sellerServer?.port).toBe(WEB_E2E_SELLER_PORT);
     expect(apiServer?.command).toContain(`PORT=${WEB_E2E_API_PORT}`);
+    expect(apiServer?.command).toContain(
+      `SELLER_SIM_BASE_URL=http://127.0.0.1:${WEB_E2E_SELLER_PORT}`,
+    );
     expect(sellerServer?.command).toContain(`PORT=${WEB_E2E_SELLER_PORT}`);
     expect(previewServer?.command).toContain(
       `OPENCLAW_LIVE_API_TARGET=http://127.0.0.1:${WEB_E2E_API_PORT}`,

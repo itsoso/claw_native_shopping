@@ -31,11 +31,13 @@ describe("web validation docs", () => {
     expect(docs).toContain("pnpm preview:web");
     expect(docs).toContain("OPENCLAW_LIVE_API_TARGET");
     expect(docs).toContain("OPENCLAW_LIVE_SELLER_TARGET");
-    expect(docs).toContain("seller-sim 目前只参与 health probe");
+    expect(docs).toContain("seller-sim now participates in the real replenishment path");
+    expect(docs).toContain("quote, hold, and commit");
     expect(docs).toContain("pnpm test");
     expect(docs).toContain("pnpm test:e2e");
     expect(docs).not.toContain("still needs a same-origin proxy or explicit `CORS` support");
     expect(docs).not.toContain("needs same-origin proxy / `CORS` wiring");
+    expect(docs).not.toContain("seller-sim 目前只参与 health probe");
     expect(packageJson.scripts?.["dev:web"]).toBe("pnpm --dir apps/web dev");
     expect(packageJson.scripts?.["dev:api"]).toBe("tsx apps/api/src/server.ts");
     expect(packageJson.scripts?.["dev:seller-sim"]).toBe("tsx apps/seller-sim/src/server.ts");
