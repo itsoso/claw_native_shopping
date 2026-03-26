@@ -11,6 +11,7 @@ import type {
   RunViewModel,
   ScenarioId,
   ScenarioMode,
+  ServiceHealthViewModel,
   ValidationRuntime,
 } from "./runtime/types.js";
 import { demoScenarios } from "./scenarios/index.js";
@@ -20,6 +21,10 @@ const DEFAULT_MODE: ScenarioMode = "time_saving";
 const DEFAULT_RUNTIME: ValidationRuntime = "demo";
 const LIVE_API_BASE_URL = "http://127.0.0.1:3000";
 const LIVE_SELLER_BASE_URL = "http://127.0.0.1:3100";
+type RuntimeHealthState = {
+  api: ServiceHealthViewModel;
+  seller: ServiceHealthViewModel;
+};
 
 const liveRuntime = createLiveRuntime({
   apiBaseUrl: LIVE_API_BASE_URL,
@@ -32,6 +37,30 @@ const runtimeState = {
     api: { status: "unknown" as const, message: "awaiting demo run" },
     seller: { status: "unknown" as const, message: "awaiting demo run" },
   },
+};
+
+const createFallbackHealth = (message: string): RuntimeHealthState => {
+  const healthyService = { status: "ok" as const, message: "probe complete" };
+  const failedService = { status: "error" as const, message };
+
+  if (message.includes("seller-sim")) {
+    return {
+      api: healthyService,
+      seller: failedService,
+    };
+  }
+
+  if (message.includes("buyer-api")) {
+    return {
+      api: failedService,
+      seller: healthyService,
+    };
+  }
+
+  return {
+    api: failedService,
+    seller: failedService,
+  };
 };
 
 export function App() {
@@ -53,6 +82,8 @@ export function App() {
   );
   const [runViewModel, setRunViewModel] = useState<RunViewModel | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [runtimeHealthOverride, setRuntimeHealthOverride] =
+    useState<RuntimeHealthState | null>(null);
   const [runtimeFailureMessage, setRuntimeFailureMessage] = useState<string | null>(null);
 
   const activeScenario =
@@ -61,7 +92,7 @@ export function App() {
   const activeSummary = runViewModel?.summary ?? activeScenario?.summary ?? "";
   const activeTags = runViewModel?.explanationTags ?? activeScenario?.tags ?? [];
   const activeRuntime = runViewModel?.runtime ?? selectedRuntime;
-  const activeHealth = runViewModel?.health ?? runtimeState.health;
+  const activeHealth = runtimeHealthOverride ?? runViewModel?.health ?? runtimeState.health;
 
   const handleSelectScenario = (scenarioId: ScenarioId): void => {
     runRequestIdRef.current += 1;
@@ -71,6 +102,7 @@ export function App() {
     };
     setSelectedScenarioId(scenarioId);
     setRunViewModel(null);
+    setRuntimeHealthOverride(null);
     setRuntimeFailureMessage(null);
   };
 
@@ -82,6 +114,7 @@ export function App() {
     };
     setSelectedMode(mode);
     setRunViewModel(null);
+    setRuntimeHealthOverride(null);
     setRuntimeFailureMessage(null);
   };
 
@@ -93,6 +126,7 @@ export function App() {
     };
     setSelectedRuntime(runtime);
     setRunViewModel(null);
+    setRuntimeHealthOverride(null);
     setRuntimeFailureMessage(null);
   };
 
@@ -108,6 +142,8 @@ export function App() {
       currentIntentRef.current.mode === requestSnapshot.mode &&
       currentIntentRef.current.runtime === requestSnapshot.runtime;
 
+    setRuntimeHealthOverride(null);
+
     try {
       const result =
         requestSnapshot.runtime === "live"
@@ -122,6 +158,9 @@ export function App() {
         return;
       }
 
+      const errorMessage =
+        error instanceof Error ? error.message : "演示运行失败，请稍后重试。";
+
       if (requestSnapshot.runtime === "live") {
         setRunViewModel(null);
         setSelectedRuntime("demo");
@@ -129,11 +168,10 @@ export function App() {
           ...currentIntentRef.current,
           runtime: "demo",
         };
+        setRuntimeHealthOverride(createFallbackHealth(errorMessage));
         setRuntimeFailureMessage("服务不可用，已切回 Demo。");
       } else {
-        setRuntimeFailureMessage(
-          error instanceof Error ? error.message : "演示运行失败，请稍后重试。",
-        );
+        setRuntimeFailureMessage(errorMessage);
       }
     } finally {
       if (runRequestIdRef.current === requestId) {
