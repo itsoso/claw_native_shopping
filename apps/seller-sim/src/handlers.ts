@@ -7,8 +7,35 @@ import {
 } from "../../../packages/seller-protocol/src/messages.js";
 import { sellerCatalog } from "./data.js";
 
-const createQuoteId = (rfqId: string): string => `quote_${rfqId}`;
+const createQuoteId = (rfqId: string, sellerAgentId: string): string =>
+  `quote_${rfqId}_${sellerAgentId}`;
 const createHoldId = (quoteId: string): string => `hold_${quoteId}`;
+
+const buildQuote = (
+  rfq: { rfqId: string; quantity: number },
+  entry: (typeof sellerCatalog)[number],
+) =>
+  QuoteSchema.parse({
+    quoteId: createQuoteId(rfq.rfqId, entry.sellerAgentId),
+    rfqId: rfq.rfqId,
+    sellerAgentId: entry.sellerAgentId,
+    items: [
+      {
+        productId: entry.productId,
+        quantity: rfq.quantity,
+        unitPrice: entry.unitPrice
+      }
+    ],
+    shippingFee: entry.shippingFee,
+    taxFee: 0,
+    deliveryEta: entry.deliveryEta,
+    inventoryHoldTtlSec: 900,
+    serviceTerms: {
+      etaHours: entry.etaHours,
+      trustScore: entry.trustScore,
+      policyMatch: entry.policyMatch
+    }
+  });
 
 export const registerSellerSimHandlers = (app: FastifyInstance): void => {
   const quotes = new Map<string, { rfqId: string; sellerAgentId: string }>();
@@ -23,29 +50,13 @@ export const registerSellerSimHandlers = (app: FastifyInstance): void => {
 
   app.post("/rfq", async (request, reply) => {
     const rfq = RFQSchema.parse(request.body);
-    const item = sellerCatalog.find((entry) => entry.category === rfq.category);
+    const options = sellerCatalog.filter((entry) => entry.category === rfq.category);
 
-    if (!item) {
+    if (options.length === 0) {
       return reply.code(404).send({ error: "category_not_supported" });
     }
 
-    const quote = QuoteSchema.parse({
-      quoteId: createQuoteId(rfq.rfqId),
-      rfqId: rfq.rfqId,
-      sellerAgentId: "seller_1",
-      items: [
-        {
-          productId: item.productId,
-          quantity: rfq.quantity,
-          unitPrice: item.unitPrice
-        }
-      ],
-      shippingFee: 0,
-      taxFee: 0,
-      deliveryEta: "2026-03-24T09:00:00+08:00",
-      inventoryHoldTtlSec: 900,
-      serviceTerms: {}
-    });
+    const quote = buildQuote(rfq, options[0]!);
 
     quotes.set(quote.quoteId, {
       rfqId: quote.rfqId,
@@ -53,6 +64,26 @@ export const registerSellerSimHandlers = (app: FastifyInstance): void => {
     });
 
     return reply.send(quote);
+  });
+
+  app.post("/rfq/options", async (request, reply) => {
+    const rfq = RFQSchema.parse(request.body);
+    const options = sellerCatalog.filter((entry) => entry.category === rfq.category);
+
+    if (options.length === 0) {
+      return reply.code(404).send({ error: "category_not_supported" });
+    }
+
+    const quotesPayload = options.map((entry) => buildQuote(rfq, entry));
+
+    for (const quote of quotesPayload) {
+      quotes.set(quote.quoteId, {
+        rfqId: quote.rfqId,
+        sellerAgentId: quote.sellerAgentId
+      });
+    }
+
+    return reply.send(quotesPayload);
   });
 
   app.post("/quotes/:quoteId/hold", async (request, reply) => {

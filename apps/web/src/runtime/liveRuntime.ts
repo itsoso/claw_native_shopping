@@ -33,6 +33,8 @@ type LiveExplanationResponse = {
     budgetLimit?: number;
     deliveryWindowLatestAt?: string;
     sellerAgentId?: string;
+    rankedOfferCount?: number;
+    selectedOfferScore?: number;
   };
 };
 
@@ -103,6 +105,16 @@ const buildLiveSteps = (
   const deliveryWindowLatestAt = snapshot.deliveryWindowLatestAt ?? "unknown-window";
   const sellerAgentId = snapshot.sellerAgentId ?? "unknown-seller";
   const snapshotStatus = snapshot.status ?? "unknown";
+  const rankedOfferCount = snapshot.rankedOfferCount;
+  const selectedOfferScore = snapshot.selectedOfferScore;
+  const rankingDetail =
+    typeof rankedOfferCount === "number" && rankedOfferCount > 1
+      ? ` Buyer API ranked ${rankedOfferCount} seller options${
+          typeof selectedOfferScore === "number"
+            ? ` and chose a ${selectedOfferScore.toFixed(3)} score offer`
+            : ""
+        }.`
+      : "";
 
   return [
     createStep(
@@ -113,7 +125,7 @@ const buildLiveSteps = (
     createStep(
       "decision",
       "Decision",
-      `Mode ${mode} mapped to budget ${budgetLimit} with delivery target ${deliveryWindowLatestAt}.`,
+      `Mode ${mode} mapped to budget ${budgetLimit} with delivery target ${deliveryWindowLatestAt}.${rankingDetail}`,
     ),
     createStep(
       "cart-plan",
@@ -123,7 +135,9 @@ const buildLiveSteps = (
     createStep(
       "seller-order",
       "Seller Order",
-      `seller-sim returned quote, hold, and commit data from ${sellerAgentId}; snapshot status reported as ${snapshotStatus}.`,
+      typeof rankedOfferCount === "number" && rankedOfferCount > 1
+        ? `seller-sim returned ${rankedOfferCount} ranked offers and completed quote, hold, and commit with ${sellerAgentId}; snapshot status reported as ${snapshotStatus}.`
+        : `seller-sim returned quote, hold, and commit data from ${sellerAgentId}; snapshot status reported as ${snapshotStatus}.`,
     ),
     createStep(
       "explanation",

@@ -32,7 +32,8 @@ describe("web validation docs", () => {
     expect(docs).toContain("OPENCLAW_LIVE_API_TARGET");
     expect(docs).toContain("OPENCLAW_LIVE_SELLER_TARGET");
     expect(docs).toContain("seller-sim now participates in the real replenishment path");
-    expect(docs).toContain("quote, hold, and commit");
+    expect(docs).toContain("offer ranking");
+    expect(docs).toContain("multiple quote options");
     expect(docs).toContain("scenario and mode");
     expect(docs).toContain("POST /intents/replenish");
     expect(docs).toContain("pnpm test");

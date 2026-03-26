@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { buildSellerSimServer } from "../../apps/seller-sim/src/server.js";
 import { runProcurementScenario } from "../../packages/orchestrator/src/service.js";
-import { createSellerSimProtocolPort } from "../helpers/request-quote.js";
+import {
+  createSellerSimProtocolPort,
+  createSellerSimQuoteCollector,
+} from "../helpers/request-quote.js";
 import { happyPathScenario } from "../fixtures/happy-path-scenario.js";
 
 describe("replenishment happy path", () => {
@@ -11,10 +14,12 @@ describe("replenishment happy path", () => {
     try {
       const result = await runProcurementScenario({
         ...happyPathScenario,
-        sellerPort: createSellerSimProtocolPort(app)
+        sellerPort: createSellerSimProtocolPort(app),
+        quoteCollector: createSellerSimQuoteCollector(app),
       });
 
       expect(result.status).toBe("orderCommitted");
+      expect(result.explanation).toContain("OFFERS_RANKED");
       expect(result.explanation).toContain("ORDER_COMMITTED");
     } finally {
       await app.close();

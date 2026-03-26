@@ -4,6 +4,7 @@ import {
   startSellerSimServer
 } from "../../apps/seller-sim/src/server.js";
 import { createSellerSimProtocolPort, requestQuote } from "../helpers/request-quote.js";
+import { QuoteSchema } from "../../packages/seller-protocol/src/messages.js";
 
 describe("seller simulator", () => {
   it("can start a real HTTP listener", async () => {
@@ -39,6 +40,35 @@ describe("seller simulator", () => {
     });
 
     expect(quote.items[0]?.quantity).toBe(2);
+  });
+
+  it("returns multiple seller quote options for supported RFQs", async () => {
+    const app = buildSellerSimServer();
+
+    try {
+      const response = await app.inject({
+        method: "POST",
+        url: "/rfq/options",
+        payload: {
+          rfqId: "rfq_options",
+          buyerAgentId: "buyer_1",
+          category: "laundry-detergent",
+          quantity: 2,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+
+      const quotes = (response.json() as unknown[]).map((value) =>
+        QuoteSchema.parse(value),
+      );
+
+      expect(quotes.length).toBeGreaterThan(1);
+      expect(new Set(quotes.map((quote) => quote.sellerAgentId)).size).toBeGreaterThan(1);
+      expect(new Set(quotes.map((quote) => quote.items[0]?.unitPrice)).size).toBeGreaterThan(1);
+    } finally {
+      await app.close();
+    }
   });
 
   it("returns an inventory hold for a known quote", async () => {

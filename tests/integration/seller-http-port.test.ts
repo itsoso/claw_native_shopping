@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildSellerSimServer } from "../../apps/seller-sim/src/server.js";
 import { createSellerHttpPort } from "../../packages/seller-protocol/src/httpPort.js";
+import { createSellerHttpQuoteCollector } from "../../packages/seller-protocol/src/httpQuoteCollector.js";
 
 describe("seller http port", () => {
   it("drives quote, hold, and commit against seller-sim over HTTP", async () => {
@@ -59,6 +60,36 @@ describe("seller http port", () => {
           quantity: 1,
         }),
       ).rejects.toThrow(/seller request failed: POST \/rfq returned HTTP 404/);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("collects and ranks multiple seller quotes over HTTP", async () => {
+    const app = buildSellerSimServer();
+    await app.listen({ host: "127.0.0.1", port: 0 });
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") {
+      throw new Error("seller_sim_address_unavailable");
+    }
+
+    const collector = createSellerHttpQuoteCollector({
+      baseUrl: `http://127.0.0.1:${address.port}`,
+    });
+
+    try {
+      const result = await collector.collectBestQuote({
+        rfqId: "rfq_ranked",
+        buyerAgentId: "buyer_1",
+        category: "laundry-detergent",
+        quantity: 2,
+      });
+
+      expect(result.rankedOffers.length).toBeGreaterThan(1);
+      expect(result.selectedQuote.sellerAgentId).toBe("seller_1");
+      expect(result.rankedOffers[0]?.sellerId).toBe("seller_1");
+      expect(result.rankedOffers[1]?.sellerId).toBe("seller_2");
     } finally {
       await app.close();
     }

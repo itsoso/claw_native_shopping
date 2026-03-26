@@ -28,6 +28,8 @@ describe("live runtime", () => {
               requestedQuantity: 2,
               budgetLimit: 100,
               deliveryWindowLatestAt: "2026-03-24T12:00:00+08:00",
+              rankedOfferCount: 2,
+              selectedOfferScore: 0.913,
             },
           }),
         ),
@@ -79,6 +81,8 @@ describe("live runtime", () => {
               budgetLimit: 55,
               deliveryWindowLatestAt: "2026-03-24T12:00:00+08:00",
               sellerAgentId: "seller_1",
+              rankedOfferCount: 2,
+              selectedOfferScore: 0.913,
             },
           }),
         ),
@@ -103,6 +107,12 @@ describe("live runtime", () => {
     );
     expect(result.steps.find((step) => step.id === "decision")?.detail).toContain(
       "55",
+    );
+    expect(result.steps.find((step) => step.id === "decision")?.detail).toContain(
+      "ranked 2 seller options",
+    );
+    expect(result.steps.find((step) => step.id === "seller-order")?.detail).toContain(
+      "2 ranked offers",
     );
     expect(result.steps.find((step) => step.id === "seller-order")?.detail).toContain(
       "seller_1",

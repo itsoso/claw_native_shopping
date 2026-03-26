@@ -2,16 +2,26 @@ import { createMemoryStore, type MemoryStore, type OrderSnapshot } from "../../.
 import { evaluatePolicy } from "../../../packages/policy-engine/src/evaluate.js";
 import { planDemand } from "../../../packages/demand-planner/src/plan.js";
 import type { DemandPlannerInput } from "../../../packages/demand-planner/src/types.js";
-import { rankOffers } from "../../../packages/offer-evaluator/src/score.js";
+import { rankOffers, type RankedOffer } from "../../../packages/offer-evaluator/src/score.js";
 import type { SellerProtocolPort } from "../../../packages/seller-protocol/src/port.js";
 import {
   InventoryHoldSchema,
   OrderCommitSchema,
   QuoteSchema,
-  RFQSchema
+  RFQSchema,
+  type Quote,
+  type RFQ
 } from "../../../packages/seller-protocol/src/messages.js";
 import { executeCheckout } from "../../../packages/checkout/src/execute.js";
 import { createProcurementMachine } from "./machine.js";
+
+export type SellerQuoteCollector = {
+  collectBestQuote(rfq: RFQ): Promise<{
+    selectedQuote: Quote;
+    rankedOffers: RankedOffer[];
+    quotes: Quote[];
+  }>;
+};
 
 export type ProcurementScenarioFixture = {
   inventoryHoldShouldFail?: boolean;
@@ -23,6 +33,7 @@ export type ProcurementScenarioFixture = {
   };
   store?: MemoryStore;
   sellerPort?: SellerProtocolPort;
+  quoteCollector?: SellerQuoteCollector;
 };
 
 export type ProcurementScenarioResult =
@@ -180,13 +191,33 @@ export const runProcurementScenario = async (
     quantity: intent.quantity
   });
 
-  const quote = await seller.requestQuote(rfq);
+  const quoteSelection = fixture.quoteCollector
+    ? await fixture.quoteCollector.collectBestQuote(rfq)
+    : null;
+  const selectedOffer = quoteSelection?.rankedOffers.find(
+    (offer) => offer.sellerId === quoteSelection.selectedQuote.sellerAgentId
+  );
+  const quote = quoteSelection?.selectedQuote ?? (await seller.requestQuote(rfq));
   state = machine.transition(state, { type: "OFFER_SELECTED" });
 
   const quoteTotal = quote.items.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
     0
   ) + quote.shippingFee + quote.taxFee;
+  const quoteSelectionContext = quoteSelection
+    ? {
+        rankedOfferCount: quoteSelection.rankedOffers.length,
+        selectedOfferScore: selectedOffer?.score,
+        selectedSellerId: quote.sellerAgentId
+      }
+    : {};
+
+  if (quoteSelection) {
+    store.appendAuditEvent(orderId, {
+      type: "OFFERS_RANKED",
+      ...quoteSelectionContext
+    });
+  }
 
   store.appendAuditEvent(orderId, {
     type: "QUOTE_SELECTED",
@@ -224,6 +255,7 @@ export const runProcurementScenario = async (
       quoteId: quote.quoteId,
       sellerAgentId: quote.sellerAgentId,
       decision: policyEvaluation.decision,
+      ...quoteSelectionContext,
       ...snapshotContext
     };
     store.setOrderSnapshot(snapshot);
@@ -253,6 +285,7 @@ export const runProcurementScenario = async (
       sellerAgentId: quote.sellerAgentId,
       totalAmount: quoteTotal,
       policyDecision: policyEvaluation.decision,
+      ...quoteSelectionContext,
       ...snapshotContext
     };
     store.setOrderSnapshot(snapshot);
@@ -284,6 +317,7 @@ export const runProcurementScenario = async (
       status: state.value,
       rfqId: rfq.rfqId,
       quoteId: quote.quoteId,
+      ...quoteSelectionContext,
       ...snapshotContext
     };
     store.setOrderSnapshot(snapshot);
@@ -328,6 +362,7 @@ export const runProcurementScenario = async (
     sellerAgentId: quote.sellerAgentId,
     totalAmount: quoteTotal,
     policyDecision: policyEvaluation.decision,
+    ...quoteSelectionContext,
     ...snapshotContext
   };
   store.setOrderSnapshot(snapshot);

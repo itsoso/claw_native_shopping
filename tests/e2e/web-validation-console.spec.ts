@@ -39,7 +39,10 @@ test("runs the live scenario in the web validation console", async ({ page }) =>
   );
   await expect(page.getByRole("heading", { name: "Seller Order" })).toBeVisible();
   await expect(
-    page.getByText(/seller-sim returned quote, hold, and commit data/i),
+    page.getByText(/seller-sim returned 2 ranked offers/i),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/ranked 2 seller options/i),
   ).toBeVisible();
   await expect(page.getByText(/seller-eta-balance/i)).toBeVisible();
   await expect(page.getByText(/budget 45/i)).toBeVisible();

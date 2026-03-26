@@ -66,6 +66,38 @@ describe("buyer api", () => {
 
   it("uses the configured seller base URL for the replenishment path", async () => {
     const seller = Fastify({ logger: false });
+    seller.post("/rfq/options", async () => [
+      {
+        quoteId: "quote_runtime_1",
+        rfqId: "intent_1",
+        sellerAgentId: "seller_runtime",
+        items: [{ productId: "egg-12", quantity: 2, unitPrice: 11 }],
+        shippingFee: 0,
+        taxFee: 0,
+        deliveryEta: "2026-03-24T09:00:00+08:00",
+        inventoryHoldTtlSec: 900,
+        serviceTerms: {
+          etaHours: 4,
+          trustScore: 0.9,
+          policyMatch: 1,
+        },
+      },
+      {
+        quoteId: "quote_runtime_2",
+        rfqId: "intent_1",
+        sellerAgentId: "seller_runtime_backup",
+        items: [{ productId: "egg-12", quantity: 2, unitPrice: 14 }],
+        shippingFee: 2,
+        taxFee: 0,
+        deliveryEta: "2026-03-25T09:00:00+08:00",
+        inventoryHoldTtlSec: 900,
+        serviceTerms: {
+          etaHours: 20,
+          trustScore: 0.6,
+          policyMatch: 0.8,
+        },
+      },
+    ]);
     seller.post("/rfq", async () => ({
       quoteId: "quote_runtime",
       rfqId: "intent_1",
@@ -175,11 +207,15 @@ describe("buyer api", () => {
       expect(explanation.explanation.map((event) => event.type)).toContain(
         "REQUEST_PROFILE_APPLIED",
       );
+      expect(explanation.explanation.map((event) => event.type)).toContain(
+        "OFFERS_RANKED",
+      );
       expect(explanation.snapshot.selectedScenarioId).toBe("seller-eta-tradeoff");
       expect(explanation.snapshot.selectedMode).toBe("value");
       expect(explanation.snapshot.requestedCategory).toBe("seller-eta-balance");
       expect(explanation.snapshot.requestedQuantity).toBe(1);
       expect(explanation.snapshot.budgetLimit).toBe(45);
+      expect(explanation.snapshot.rankedOfferCount).toBeGreaterThan(1);
     } finally {
       await app.close();
       await seller.close();
