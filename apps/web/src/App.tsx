@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { FlowTimeline } from "./components/FlowTimeline.js";
 import { Hero } from "./components/Hero.js";
@@ -21,9 +21,16 @@ const runtimeState = {
 };
 
 export function App() {
+  const runRequestIdRef = useRef(0);
+  const currentIntentRef = useRef({
+    scenarioId: DEFAULT_SCENARIO_ID,
+    mode: DEFAULT_MODE,
+    runtime: runtimeState.runtime,
+  });
   const [selectedScenarioId, setSelectedScenarioId] =
     useState<ScenarioId>(DEFAULT_SCENARIO_ID);
   const [selectedMode, setSelectedMode] = useState<ScenarioMode>(DEFAULT_MODE);
+  const [selectedRuntime, setSelectedRuntime] = useState(runtimeState.runtime);
   const [runViewModel, setRunViewModel] = useState<RunViewModel | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -32,27 +39,59 @@ export function App() {
 
   const activeSummary = runViewModel?.summary ?? activeScenario?.summary ?? "";
   const activeTags = runViewModel?.explanationTags ?? activeScenario?.tags ?? [];
-  const activeRuntime = runViewModel?.runtime ?? runtimeState.runtime;
+  const activeRuntime = runViewModel?.runtime ?? selectedRuntime;
   const activeHealth = runViewModel?.health ?? runtimeState.health;
 
   const handleSelectScenario = (scenarioId: ScenarioId): void => {
+    runRequestIdRef.current += 1;
+    currentIntentRef.current = {
+      ...currentIntentRef.current,
+      scenarioId,
+    };
     setSelectedScenarioId(scenarioId);
     setRunViewModel(null);
   };
 
   const handleModeChange = (mode: ScenarioMode): void => {
+    runRequestIdRef.current += 1;
+    currentIntentRef.current = {
+      ...currentIntentRef.current,
+      mode,
+    };
     setSelectedMode(mode);
     setRunViewModel(null);
   };
 
+  const handleRuntimeChange = (runtime: typeof runtimeState.runtime): void => {
+    runRequestIdRef.current += 1;
+    currentIntentRef.current = {
+      ...currentIntentRef.current,
+      runtime,
+    };
+    setSelectedRuntime(runtime);
+    setRunViewModel(null);
+  };
+
   const handleRun = async (): Promise<void> => {
+    const requestId = ++runRequestIdRef.current;
+    const requestSnapshot = { ...currentIntentRef.current };
     setIsRunning(true);
 
     try {
       const result = await runDemoScenario(selectedScenarioId, selectedMode);
-      setRunViewModel(result);
+      const intentIsCurrent =
+        runRequestIdRef.current === requestId &&
+        currentIntentRef.current.scenarioId === requestSnapshot.scenarioId &&
+        currentIntentRef.current.mode === requestSnapshot.mode &&
+        currentIntentRef.current.runtime === requestSnapshot.runtime;
+
+      if (intentIsCurrent) {
+        setRunViewModel(result);
+      }
     } finally {
-      setIsRunning(false);
+      if (runRequestIdRef.current === requestId) {
+        setIsRunning(false);
+      }
     }
   };
 
@@ -81,7 +120,7 @@ export function App() {
         <OpsDock
           health={activeHealth}
           runtime={activeRuntime}
-          onRuntimeSelect={() => undefined}
+          onRuntimeSelect={handleRuntimeChange}
         />
       </section>
 

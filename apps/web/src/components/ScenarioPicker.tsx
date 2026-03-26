@@ -34,6 +34,7 @@ export function ScenarioPicker({
             <button
               className="mode-chip"
               data-active={mode === candidate}
+              aria-pressed={mode === candidate}
               key={candidate}
               type="button"
               onClick={() => onModeChange(candidate)}
@@ -52,6 +53,7 @@ export function ScenarioPicker({
             <button
               className="scenario-card"
               data-active={isActive}
+              aria-pressed={isActive}
               key={scenario.id}
               type="button"
               onClick={() => onSelectScenario(scenario.id)}
