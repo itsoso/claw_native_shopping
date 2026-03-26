@@ -1,6 +1,6 @@
 import type { ScenarioDefinition } from "../runtime/types.js";
 
-export const demoScenarios: ScenarioDefinition[] = [
+export const demoScenarios: readonly ScenarioDefinition[] = [
   {
     id: "replenish-laundry",
     title: "补货日常洗衣液",

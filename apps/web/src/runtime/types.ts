@@ -29,7 +29,13 @@ export type RunViewModel = {
   steps: RunStepViewModel[];
   signals: readonly string[];
   health: {
-    api: "unknown" | "ok" | "error";
-    seller: "unknown" | "ok" | "error";
+    api: ServiceHealthViewModel;
+    seller: ServiceHealthViewModel;
   };
+};
+
+export type ServiceHealthViewModel = {
+  status: "unknown" | "ok" | "error";
+  checkedAt?: string;
+  message?: string;
 };
