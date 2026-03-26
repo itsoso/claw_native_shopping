@@ -39,3 +39,13 @@ export type ServiceHealthViewModel = {
   checkedAt?: string;
   message?: string;
 };
+
+export type LiveRuntimeOptions = {
+  apiBaseUrl: string;
+  sellerBaseUrl: string;
+  fetch?: typeof fetch;
+};
+
+export type LiveRuntime = {
+  run(scenarioId: ScenarioId, mode: ScenarioMode): Promise<RunViewModel>;
+};
