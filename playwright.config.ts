@@ -9,8 +9,8 @@ export default defineConfig({
     headless: true,
   },
   webServer: {
-    command: `sh -c "pnpm --filter @claw/browser-extension build && python3 -m http.server ${PORT} --bind 127.0.0.1"`,
-    port: PORT,
+    command: "pnpm serve:e2e",
+    port: 4174,
     cwd: ".",
     reuseExistingServer: true,
     timeout: 120_000,
