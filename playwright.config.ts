@@ -25,7 +25,12 @@ export const shouldStartWebPreview = (
 ): boolean => {
   const cliArgs = argv
     .slice(2)
-    .filter((value) => value.length > 0 && !value.startsWith("-"));
+    .filter(
+      (value) =>
+        value.length > 0 &&
+        !value.startsWith("-") &&
+        value !== "test",
+    );
 
   if (cliArgs.length === 0) {
     return true;

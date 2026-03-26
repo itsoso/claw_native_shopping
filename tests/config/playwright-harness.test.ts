@@ -12,6 +12,10 @@ describe("playwright e2e harness", () => {
     expect(playwrightConfig.globalSetup).toBe("./tests/e2e/globalSetup.ts");
 
     expect(
+      shouldStartWebPreview(["node", "playwright", "test"]),
+    ).toBe(true);
+
+    expect(
       shouldStartWebPreview([
         "node",
         "playwright",
