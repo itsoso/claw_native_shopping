@@ -28,7 +28,6 @@ export type RunViewModel = {
   summary: string;
   steps: RunStepViewModel[];
   explanationTags: readonly string[];
-  signals: readonly string[];
   health: {
     api: ServiceHealthViewModel;
     seller: ServiceHealthViewModel;

@@ -24,7 +24,6 @@ export const demoScenarios: readonly ScenarioDefinition[] = [
 export type DemoScenarioFixture = ScenarioDefinition & {
   summary: string;
   explanationTags: readonly string[];
-  signals: readonly string[];
   steps: {
     demand: string;
     decision: string;
@@ -43,7 +42,6 @@ const demoScenarioEntries: readonly [ScenarioId, DemoScenarioFixture][] = [
       summary: "演示 OpenClaw 如何接管高频日用品复购决策。",
       tags: ["replenishment", "daily-use", "demo"],
       explanationTags: ["replenishment", "repeat-purchase", "time_saving"],
-      signals: ["replenishment", "repeat-purchase", "time_saving"],
       steps: {
         demand: "识别日常洗衣液即将用尽，并锁定补货目标。",
         decision: "优先选择自营、次日达、规格稳定的常购款。",
@@ -61,7 +59,6 @@ const demoScenarioEntries: readonly [ScenarioId, DemoScenarioFixture][] = [
       summary: "演示 OpenClaw 如何帮用户更快完成整单凑单。",
       tags: ["cart", "threshold", "demo"],
       explanationTags: ["cart-optimization", "threshold", "value"],
-      signals: ["cart-optimization", "threshold", "value"],
       steps: {
         demand: "识别购物车距离满减门槛的差额。",
         decision: "建议最少新增或替换的商品组合。",
@@ -79,7 +76,6 @@ const demoScenarioEntries: readonly [ScenarioId, DemoScenarioFixture][] = [
       summary: "演示 OpenClaw 如何解释时效、价格和稳定性的取舍。",
       tags: ["eta", "price", "demo"],
       explanationTags: ["eta", "price", "safe"],
-      signals: ["eta", "price", "safe"],
       steps: {
         demand: "识别用户对时效、价格和稳定性的约束。",
         decision: "在更快与更省之间选出默认安全解。",

@@ -19,7 +19,6 @@ const buildStep = (
 
 const createDemoHealth = () => ({
   status: "ok" as const,
-  checkedAt: "2026-03-26T10:00:00+08:00",
   message: "demo runtime active",
 });
 
@@ -42,7 +41,6 @@ export const runDemoScenario = async (
       buildStep("explanation", "Explanation", scenario.steps.explanation),
     ],
     explanationTags: scenario.explanationTags,
-    signals: scenario.signals,
     health: {
       api: createDemoHealth(),
       seller: createDemoHealth(),
