@@ -59,14 +59,14 @@ The page expects these local endpoints:
 - buyer API: `http://127.0.0.1:3000/health`
 - seller simulator: `http://127.0.0.1:3100/health`
 
-When you switch to `Live` and click `开始演示`, the runtime:
+When you switch to `Live`, the health cards stay `Unknown` until you click `开始演示`. That click triggers the actual live run. At that point the runtime:
 
 1. probes `/health` on both services
 2. posts to `POST /intents/replenish`
 3. reads `GET /orders/:id/explanation`
 4. maps the live responses back into the same timeline UI
 
-If either service is unavailable, the page falls back to `Demo` and shows a runtime fallback message instead of leaving the page blank.
+Today the live request path is a fixed local replenishment flow. The selected scenario and mode still shape the summary and other UI framing, but they only affect the presentation copy on screen and do not change the backend request body yet. 换句话说，当前选择只影响页面上的演示文案，不改变 Live 请求本身。如果任一服务不可用，页面会自动回退到 `Demo`，而不是留在空白或错误状态。
 
 ## Investor Walkthrough
 
@@ -76,16 +76,17 @@ For a short 投资人 demo, use this order:
 2. State the product in one line: OpenClaw is not a recommendation widget, it is a消费决策代理.
 3. Click `开始演示` and narrate the five-step timeline from left to right.
 4. Point at the `Runtime State` block to show that the system can switch between Demo and Live.
-5. Switch to `Live`, confirm the two health cards are healthy, and run one more scenario.
-6. If the local services are intentionally down, show the automatic fallback to Demo as proof that the page degrades safely during a meeting.
+5. Switch to `Live`, click `开始演示`, and then confirm the two health cards move away from `Unknown` as the page probes `/health`.
+6. Explain that Live currently validates a fixed local replenishment path, while the chosen scenario and mode only affect the presentation copy shown around that path.
+7. If the local services are intentionally down, show the automatic fallback to Demo as proof that the page degrades safely during a meeting.
 
 ## Validation Commands
 
 Use these commands before sharing the console:
 
 ```bash
-pnpm vitest run tests/config/web-docs.test.ts
+pnpm test
 pnpm test:e2e
 ```
 
-`pnpm test:e2e` runs the Playwright suite, including the browser smoke test for the web console.
+`pnpm test` includes the doc guards and web runtime unit tests. `pnpm test:e2e` runs the Playwright suite, including the browser smoke test for the web console.
