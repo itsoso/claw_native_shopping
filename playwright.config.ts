@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 const FIXTURE_PORT = 4173;
 const WEB_PORT = 4174;
-const WEB_SPEC_PATH = "tests/e2e/web-validation-console.spec.ts";
+const WEB_SPEC_FILENAME = "web-validation-console.spec.ts";
 const PLAYWRIGHT_OPTIONS_WITH_VALUE = new Set([
   "--browser",
   "--config",
@@ -20,6 +20,7 @@ const PLAYWRIGHT_OPTIONS_WITH_VALUE = new Set([
   "--shard",
   "--timeout",
   "--trace",
+  "--ui-port",
   "--workers",
   "-j",
 ]);
@@ -39,6 +40,8 @@ const buildWebPreviewServer = () => ({
   reuseExistingServer: false,
   timeout: 120_000,
 });
+
+const normalizeSelector = (value: string): string => value.split(":")[0] ?? value;
 
 export const shouldStartWebPreview = (
   argv: readonly string[] = process.argv,
@@ -72,7 +75,11 @@ export const shouldStartWebPreview = (
     return true;
   }
 
-  if (selectors.some((value) => value.includes(WEB_SPEC_PATH))) {
+  if (
+    selectors.some((value) =>
+      normalizeSelector(value).endsWith(WEB_SPEC_FILENAME),
+    )
+  ) {
     return true;
   }
 

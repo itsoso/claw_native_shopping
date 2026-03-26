@@ -54,6 +54,33 @@ describe("playwright e2e harness", () => {
         "node",
         "playwright",
         "test",
+        "web-validation-console.spec.ts",
+        "--workers",
+        "1",
+      ]),
+    ).toBe(true);
+    expect(
+      shouldStartWebPreview([
+        "node",
+        "playwright",
+        "test",
+        "tests/e2e/web-validation-console.spec.ts:5",
+      ]),
+    ).toBe(true);
+    expect(
+      shouldStartWebPreview([
+        "node",
+        "playwright",
+        "test",
+        "tests/e2e/product-page.spec.ts",
+        "web-validation-console.spec.ts",
+      ]),
+    ).toBe(true);
+    expect(
+      shouldStartWebPreview([
+        "node",
+        "playwright",
+        "test",
         "tests/e2e/web-validation-console.spec.ts",
       ]),
     ).toBe(true);
