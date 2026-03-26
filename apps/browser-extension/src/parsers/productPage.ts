@@ -37,9 +37,7 @@ function parseUnitPrice(document: Document): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export function parseJdProductPage(html: string): ProductPageModel {
-  const document = new DOMParser().parseFromString(html, "text/html");
-
+export function parseJdProductDocument(document: Document): ProductPageModel {
   const title =
     textContentOf(document, "#product-name") ??
     textContentOf(document, "title") ??
@@ -60,4 +58,9 @@ export function parseJdProductPage(html: string): ProductPageModel {
     deliveryEta,
     packageLabel,
   };
+}
+
+export function parseJdProductPage(html: string): ProductPageModel {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  return parseJdProductDocument(document);
 }

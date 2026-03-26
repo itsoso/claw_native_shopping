@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { parseJdProductPage } from "../parsers/productPage.js";
+import { parseJdProductDocument } from "../parsers/productPage.js";
 import { buildProductDecision } from "../recommendation/buildProductDecision.js";
 import { recordEvent } from "../storage/events.js";
 import { loadPreferences, savePreferences } from "../storage/preferences.js";
@@ -30,9 +30,7 @@ export function buildProductPageDecision(
   rootDocument: Document,
   mode: DecisionMode = "time_saving",
 ): ProductDecisionOutput {
-  const currentProduct = parseJdProductPage(
-    rootDocument.documentElement.outerHTML,
-  );
+  const currentProduct = parseJdProductDocument(rootDocument);
 
   return buildProductDecision(
     {
