@@ -6,14 +6,20 @@ import { ExplanationPanel } from "./components/ExplanationPanel.js";
 import { OpsDock } from "./components/OpsDock.js";
 import { ScenarioPicker } from "./components/ScenarioPicker.js";
 import { runDemoScenario } from "./runtime/demoRuntime.js";
-import type { RunViewModel, ScenarioId, ScenarioMode } from "./runtime/types.js";
+import type {
+  RunViewModel,
+  ScenarioId,
+  ScenarioMode,
+  ValidationRuntime,
+} from "./runtime/types.js";
 import { demoScenarios } from "./scenarios/index.js";
 
 const DEFAULT_SCENARIO_ID = demoScenarios[0]?.id ?? "replenish-laundry";
 const DEFAULT_MODE: ScenarioMode = "time_saving";
+const DEFAULT_RUNTIME: ValidationRuntime = "demo";
 
 const runtimeState = {
-  runtime: "demo" as const,
+  runtime: DEFAULT_RUNTIME,
   health: {
     api: { status: "unknown" as const, message: "awaiting demo run" },
     seller: { status: "unknown" as const, message: "awaiting demo run" },
@@ -22,7 +28,11 @@ const runtimeState = {
 
 export function App() {
   const runRequestIdRef = useRef(0);
-  const currentIntentRef = useRef({
+  const currentIntentRef = useRef<{
+    scenarioId: ScenarioId;
+    mode: ScenarioMode;
+    runtime: ValidationRuntime;
+  }>({
     scenarioId: DEFAULT_SCENARIO_ID,
     mode: DEFAULT_MODE,
     runtime: runtimeState.runtime,
@@ -30,7 +40,9 @@ export function App() {
   const [selectedScenarioId, setSelectedScenarioId] =
     useState<ScenarioId>(DEFAULT_SCENARIO_ID);
   const [selectedMode, setSelectedMode] = useState<ScenarioMode>(DEFAULT_MODE);
-  const [selectedRuntime, setSelectedRuntime] = useState(runtimeState.runtime);
+  const [selectedRuntime, setSelectedRuntime] = useState<ValidationRuntime>(
+    DEFAULT_RUNTIME,
+  );
   const [runViewModel, setRunViewModel] = useState<RunViewModel | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -62,7 +74,7 @@ export function App() {
     setRunViewModel(null);
   };
 
-  const handleRuntimeChange = (runtime: typeof runtimeState.runtime): void => {
+  const handleRuntimeChange = (runtime: ValidationRuntime): void => {
     runRequestIdRef.current += 1;
     currentIntentRef.current = {
       ...currentIntentRef.current,
