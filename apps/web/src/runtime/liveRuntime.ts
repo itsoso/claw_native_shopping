@@ -56,6 +56,14 @@ const normalizeHealth = (
   };
 };
 
+const parseJsonResponse = async <T>(response: Response, label: string): Promise<T> => {
+  if (!response.ok) {
+    throw new Error(`${label} failed with HTTP ${response.status}`);
+  }
+
+  return (await response.json()) as T;
+};
+
 const extractExplanationTags = (response: LiveExplanationResponse): readonly string[] => {
   return (
     response.explanation
@@ -69,7 +77,7 @@ const buildLiveSteps = (
   mode: ScenarioMode,
   orderId: string,
   snapshotStatus: string,
-  explanationTags: readonly string[],
+  explanationEvents: readonly string[],
 ): RunStepViewModel[] => {
   const scenario = getDemoScenarioFixture(scenarioId);
 
@@ -81,8 +89,8 @@ const buildLiveSteps = (
     createStep(
       "explanation",
       "Explanation",
-      explanationTags.length > 0
-        ? `Audit trail events: ${explanationTags.join(", ")}`
+      explanationEvents.length > 0
+        ? `Audit trail events: ${explanationEvents.join(", ")}`
         : "Audit trail events were not returned.",
     ),
   ];
@@ -98,28 +106,33 @@ export const createLiveRuntime = (options: LiveRuntimeOptions): LiveRuntime => {
         fetchImpl(buildUrl(options.sellerBaseUrl, "/health")),
       ]);
 
-      const apiHealth = normalizeHealth(
-        (await apiHealthResponse.json()) as HealthProbeResponse,
-        "buyer-api",
-      );
-      const sellerHealth = normalizeHealth(
-        (await sellerHealthResponse.json()) as HealthProbeResponse,
-        "seller-sim",
-      );
+      const [apiHealthPayload, sellerHealthPayload] = await Promise.all([
+        parseJsonResponse<HealthProbeResponse>(apiHealthResponse, "buyer-api /health"),
+        parseJsonResponse<HealthProbeResponse>(sellerHealthResponse, "seller-sim /health"),
+      ]);
+
+      const apiHealth = normalizeHealth(apiHealthPayload, "buyer-api");
+      const sellerHealth = normalizeHealth(sellerHealthPayload, "seller-sim");
 
       const replenishResponse = await fetchImpl(
         buildUrl(options.apiBaseUrl, "/intents/replenish"),
         { method: "POST" },
       );
-      const replenish = (await replenishResponse.json()) as LiveIntentResponse;
+      const replenish = await parseJsonResponse<LiveIntentResponse>(
+        replenishResponse,
+        "buyer-api POST /intents/replenish",
+      );
 
       const explanationResponse = await fetchImpl(
         buildUrl(options.apiBaseUrl, `/orders/${replenish.orderId}/explanation`),
       );
-      const explanation = (await explanationResponse.json()) as LiveExplanationResponse;
+      const explanation = await parseJsonResponse<LiveExplanationResponse>(
+        explanationResponse,
+        "buyer-api GET /orders/:id/explanation",
+      );
 
       const scenario = getDemoScenarioFixture(scenarioId);
-      const explanationTags = extractExplanationTags(explanation);
+      const explanationEvents = extractExplanationTags(explanation);
 
       return {
         scenarioId,
@@ -131,10 +144,9 @@ export const createLiveRuntime = (options: LiveRuntimeOptions): LiveRuntime => {
           mode,
           replenish.orderId,
           explanation.snapshot?.status ?? "unknown",
-          explanationTags,
+          explanationEvents,
         ),
-        explanationTags:
-          explanationTags.length > 0 ? explanationTags : scenario.explanationTags,
+        explanationTags: scenario.explanationTags,
         health: {
           api: apiHealth,
           seller: sellerHealth,
