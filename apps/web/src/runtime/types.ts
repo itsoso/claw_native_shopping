@@ -27,6 +27,7 @@ export type RunViewModel = {
   mode: ScenarioMode;
   summary: string;
   steps: RunStepViewModel[];
+  explanationTags: readonly string[];
   signals: readonly string[];
   health: {
     api: ServiceHealthViewModel;

@@ -14,6 +14,11 @@ describe("demo runtime", () => {
       "seller-order",
       "explanation",
     ]);
+    expect(result.explanationTags).toEqual([
+      "replenishment",
+      "repeat-purchase",
+      "time_saving",
+    ]);
     expect(result.summary).toContain("OpenClaw");
   });
 });

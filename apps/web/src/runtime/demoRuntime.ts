@@ -41,6 +41,7 @@ export const runDemoScenario = async (
       buildStep("seller-order", "Seller Order", scenario.steps.sellerOrder),
       buildStep("explanation", "Explanation", scenario.steps.explanation),
     ],
+    explanationTags: scenario.explanationTags,
     signals: scenario.signals,
     health: {
       api: createDemoHealth(),
