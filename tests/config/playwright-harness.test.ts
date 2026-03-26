@@ -40,6 +40,22 @@ describe("playwright e2e harness", () => {
         "1",
       ]),
     ).toBe(false);
+    expect(
+      shouldStartWebPreview([
+        "node",
+        "playwright",
+        "test",
+        "tests/e2e/product-page.spec.ts:5",
+      ]),
+    ).toBe(false);
+    expect(
+      shouldStartWebPreview([
+        "node",
+        "playwright",
+        "test",
+        "C:\\repo\\tests\\e2e\\product-page.spec.ts:5",
+      ]),
+    ).toBe(false);
 
     const productServers = buildWebServers([
       "node",
@@ -72,6 +88,14 @@ describe("playwright e2e harness", () => {
         "node",
         "playwright",
         "test",
+        "tests/e2e/web-validation-console.spec.ts:5:9",
+      ]),
+    ).toBe(true);
+    expect(
+      shouldStartWebPreview([
+        "node",
+        "playwright",
+        "test",
         "tests/e2e/product-page.spec.ts",
         "web-validation-console.spec.ts",
       ]),
@@ -82,6 +106,14 @@ describe("playwright e2e harness", () => {
         "playwright",
         "test",
         "tests/e2e/web-validation-console.spec.ts",
+      ]),
+    ).toBe(true);
+    expect(
+      shouldStartWebPreview([
+        "node",
+        "playwright",
+        "test",
+        "C:\\repo\\tests\\e2e\\web-validation-console.spec.ts",
       ]),
     ).toBe(true);
 

@@ -41,7 +41,8 @@ const buildWebPreviewServer = () => ({
   timeout: 120_000,
 });
 
-const normalizeSelector = (value: string): string => value.split(":")[0] ?? value;
+const normalizeSelector = (value: string): string =>
+  value.replace(/:\d+(?::\d+)?$/, "");
 
 export const shouldStartWebPreview = (
   argv: readonly string[] = process.argv,
@@ -75,15 +76,15 @@ export const shouldStartWebPreview = (
     return true;
   }
 
+  const normalizedSelectors = selectors.map((value) => normalizeSelector(value));
+
   if (
-    selectors.some((value) =>
-      normalizeSelector(value).endsWith(WEB_SPEC_FILENAME),
-    )
+    normalizedSelectors.some((value) => value.endsWith(WEB_SPEC_FILENAME))
   ) {
     return true;
   }
 
-  return selectors.some((value) => !value.endsWith(".spec.ts"));
+  return normalizedSelectors.some((value) => !value.endsWith(".spec.ts"));
 };
 
 export const buildWebServers = (
