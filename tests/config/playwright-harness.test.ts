@@ -15,6 +15,12 @@ describe("playwright e2e harness", () => {
     expect(
       shouldStartWebPreview(["node", "playwright", "test"]),
     ).toBe(true);
+    expect(
+      shouldStartWebPreview(["node", "playwright", "test", "--workers", "1"]),
+    ).toBe(true);
+    expect(
+      shouldStartWebPreview(["node", "playwright", "test", "tests/e2e"]),
+    ).toBe(true);
 
     expect(
       shouldStartWebPreview([
@@ -22,6 +28,16 @@ describe("playwright e2e harness", () => {
         "playwright",
         "test",
         "tests/e2e/product-page.spec.ts",
+      ]),
+    ).toBe(false);
+    expect(
+      shouldStartWebPreview([
+        "node",
+        "playwright",
+        "test",
+        "tests/e2e/product-page.spec.ts",
+        "--workers",
+        "1",
       ]),
     ).toBe(false);
 
@@ -60,7 +76,7 @@ describe("playwright e2e harness", () => {
     };
     const e2eScript = packageJson.scripts?.["test:e2e"] ?? "";
 
-    expect(e2eScript).toContain("playwright test");
+    expect(e2eScript).toBe("playwright test");
     expect(e2eScript).not.toContain("@claw/browser-extension build");
   });
 });

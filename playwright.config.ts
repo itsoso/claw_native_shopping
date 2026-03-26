@@ -3,6 +3,26 @@ import { defineConfig } from "@playwright/test";
 const FIXTURE_PORT = 4173;
 const WEB_PORT = 4174;
 const WEB_SPEC_PATH = "tests/e2e/web-validation-console.spec.ts";
+const PLAYWRIGHT_OPTIONS_WITH_VALUE = new Set([
+  "--browser",
+  "--config",
+  "-c",
+  "--global-timeout",
+  "--grep",
+  "-g",
+  "--grep-invert",
+  "--max-failures",
+  "--output",
+  "--project",
+  "--repeat-each",
+  "--reporter",
+  "--retries",
+  "--shard",
+  "--timeout",
+  "--trace",
+  "--workers",
+  "-j",
+]);
 
 const buildFixtureServer = () => ({
   command: `python3 -m http.server ${FIXTURE_PORT} --bind 127.0.0.1 --directory .`,
@@ -23,20 +43,40 @@ const buildWebPreviewServer = () => ({
 export const shouldStartWebPreview = (
   argv: readonly string[] = process.argv,
 ): boolean => {
-  const cliArgs = argv
-    .slice(2)
-    .filter(
-      (value) =>
-        value.length > 0 &&
-        !value.startsWith("-") &&
-        value !== "test",
-    );
+  const selectors: string[] = [];
+  let skipNextValue = false;
 
-  if (cliArgs.length === 0) {
+  for (const value of argv.slice(2)) {
+    if (skipNextValue) {
+      skipNextValue = false;
+      continue;
+    }
+
+    if (value === "test") {
+      continue;
+    }
+
+    if (PLAYWRIGHT_OPTIONS_WITH_VALUE.has(value)) {
+      skipNextValue = true;
+      continue;
+    }
+
+    if (value.startsWith("-")) {
+      continue;
+    }
+
+    selectors.push(value);
+  }
+
+  if (selectors.length === 0) {
     return true;
   }
 
-  return cliArgs.some((value) => value.includes(WEB_SPEC_PATH));
+  if (selectors.some((value) => value.includes(WEB_SPEC_PATH))) {
+    return true;
+  }
+
+  return selectors.some((value) => !value.endsWith(".spec.ts"));
 };
 
 export const buildWebServers = (

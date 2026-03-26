@@ -12,7 +12,7 @@
     "preview:web": "pnpm --dir apps/web exec vite preview --host 127.0.0.1 --port 4174 --strictPort",
     "preview:web:e2e": "pnpm build:web && pnpm preview:web",
     "test": "vitest run",
-    "test:e2e": "playwright test tests/e2e/product-page.spec.ts tests/e2e/cart-page.spec.ts tests/e2e/extension-runtime.spec.ts tests/e2e/web-validation-console.spec.ts",
+    "test:e2e": "playwright test",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.base.json --noEmit",
     "verify": "bash scripts/verify.sh",
