@@ -14,6 +14,13 @@ export const registerSellerSimHandlers = (app: FastifyInstance): void => {
   const quotes = new Map<string, { rfqId: string; sellerAgentId: string }>();
   const holds = new Map<string, { quoteId: string; rfqId: string; sellerAgentId: string }>();
 
+  app.get("/health", async () => {
+    return {
+      status: "ok",
+      service: "seller-sim"
+    };
+  });
+
   app.post("/rfq", async (request, reply) => {
     const rfq = RFQSchema.parse(request.body);
     const item = sellerCatalog.find((entry) => entry.category === rfq.category);
