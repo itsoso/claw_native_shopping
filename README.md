@@ -21,6 +21,13 @@ The main architecture references are:
 - [System breakdown](./docs/2026-03-26-claw-native-commerce-system-breakdown.zh-CN.md)
 - [Roadshow narrative](./docs/2026-03-27-claw-native-commerce-roadshow-narrative.zh-CN.md)
 
+## Fundraising Docs
+
+Use these when turning the architecture narrative into financing materials:
+
+- [Fundraising BP skeleton](./docs/2026-03-27-claw-native-commerce-fundraising-bp-skeleton.zh-CN.md)
+- [10-slide deck outline](./docs/2026-03-27-claw-native-commerce-deck-outline.zh-CN.md)
+
 ## Local Setup
 
 ```bash
