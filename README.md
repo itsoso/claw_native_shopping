@@ -28,6 +28,13 @@ Use these when turning the architecture narrative into financing materials:
 - [Fundraising BP skeleton](./docs/2026-03-27-claw-native-commerce-fundraising-bp-skeleton.zh-CN.md)
 - [10-slide deck outline](./docs/2026-03-27-claw-native-commerce-deck-outline.zh-CN.md)
 - [10-slide deck copy](./docs/2026-03-27-claw-native-commerce-deck-copy.zh-CN.md)
+- [Generated fundraising deck (.pptx)](./docs/presentations/2026-03-27-claw-native-commerce-fundraising-deck.pptx)
+
+To regenerate the `.pptx` deck locally:
+
+```bash
+pnpm generate:deck:fundraising
+```
 
 ## Local Setup
 

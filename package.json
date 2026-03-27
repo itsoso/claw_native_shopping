@@ -19,7 +19,8 @@
     "dev:api": "tsx apps/api/src/server.ts",
     "dev:seller-sim": "tsx apps/seller-sim/src/server.ts",
     "start:api": "tsx apps/api/src/server.ts",
-    "start:seller-sim": "tsx apps/seller-sim/src/server.ts"
+    "start:seller-sim": "tsx apps/seller-sim/src/server.ts",
+    "generate:deck:fundraising": "node scripts/generate-fundraising-deck.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
@@ -28,6 +29,7 @@
     "eslint": "^9.23.0",
     "jsdom": "^29.0.1",
     "linkedom": "^0.18.12",
+    "pptxgenjs": "^4.0.1",
     "prettier": "^3.5.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

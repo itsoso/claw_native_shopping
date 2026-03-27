@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
@@ -16,6 +16,10 @@ describe("fundraising docs", () => {
       "docs/2026-03-27-claw-native-commerce-deck-copy.zh-CN.md",
       "utf8",
     );
+    const readme = readFileSync("README.md", "utf8");
+    const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
+      scripts?: Record<string, string>;
+    };
 
     expect(bpSkeleton).toContain("融资 BP 文案骨架");
     expect(bpSkeleton).toContain("问题");
@@ -39,5 +43,16 @@ describe("fundraising docs", () => {
     expect(deckCopy).toContain("视觉建议");
     expect(deckCopy).toContain("口播要点");
     expect(deckCopy).toContain("常见讲偏的坑");
+
+    expect(readme).toContain("Fundraising Docs");
+    expect(readme).toContain("Generated fundraising deck (.pptx)");
+    expect(readme).toContain("pnpm generate:deck:fundraising");
+    expect(packageJson.scripts?.["generate:deck:fundraising"]).toBe(
+      "node scripts/generate-fundraising-deck.mjs",
+    );
+    expect(existsSync("scripts/generate-fundraising-deck.mjs")).toBe(true);
+    expect(
+      existsSync("docs/presentations/2026-03-27-claw-native-commerce-fundraising-deck.pptx"),
+    ).toBe(true);
   });
 });
