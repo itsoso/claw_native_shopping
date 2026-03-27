@@ -10,6 +10,17 @@ Chrome-compatible JD shopping copilot MVP for `个护家清 + 日用品复购`. 
 - Browser smoke tests: Playwright verifies the injected UI against static JD fixtures
 - Web validation console: a single-page Demo/Live showroom for investor and operator walkthroughs
 
+## Architecture Docs
+
+Use the root [ARCHITECTURE.md](./ARCHITECTURE.md) as the entrypoint for the current system docs.
+
+The main architecture references are:
+
+- [Current architecture baseline](./docs/2026-03-26-claw-native-commerce-current-architecture.zh-CN.md)
+- [Investor brief](./docs/2026-03-26-claw-native-commerce-investor-brief.zh-CN.md)
+- [System breakdown](./docs/2026-03-26-claw-native-commerce-system-breakdown.zh-CN.md)
+- [Roadshow narrative](./docs/2026-03-27-claw-native-commerce-roadshow-narrative.zh-CN.md)
+
 ## Local Setup
 
 ```bash
