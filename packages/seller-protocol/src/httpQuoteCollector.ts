@@ -1,5 +1,6 @@
 import { rankOffers, type RankedOffer } from "../../../packages/offer-evaluator/src/score.js";
 import { QuoteSchema, type Quote, type RFQ } from "./messages.js";
+import { createSellerHttpClient } from "./httpClient.js";
 
 export type SellerHttpQuoteCollectorOptions = {
   baseUrl: string;
@@ -12,9 +13,6 @@ export type RankedQuoteCollection = {
   quotes: Quote[];
 };
 
-const buildUrl = (baseUrl: string, path: string): string =>
-  new URL(path, baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`).toString();
-
 const asNumber = (value: unknown, fallback: number): number =>
   typeof value === "number" && Number.isFinite(value) ? value : fallback;
 
@@ -23,23 +21,16 @@ export const createSellerHttpQuoteCollector = (
 ): {
   collectBestQuote(rfq: RFQ): Promise<RankedQuoteCollection>;
 } => {
-  const fetchImpl = options.fetch ?? fetch;
+  const client = createSellerHttpClient(options);
 
   return {
     async collectBestQuote(rfq: RFQ): Promise<RankedQuoteCollection> {
-      const response = await fetchImpl(buildUrl(options.baseUrl, "/rfq/options"), {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(rfq),
-      });
-
-      if (!response.ok) {
-        throw new Error(`seller request failed: POST /rfq/options returned HTTP ${response.status}`);
-      }
-
-      const quotes = (await response.json() as unknown[]).map((value) => QuoteSchema.parse(value));
+      const quotes = await client.postJson(
+        "/rfq/options",
+        rfq,
+        "seller request failed: POST /rfq/options",
+        (value) => (value as unknown[]).map((entry) => QuoteSchema.parse(entry)),
+      );
       const quoteBySeller = new Map(quotes.map((quote) => [quote.sellerAgentId, quote]));
 
       const rankedOffers = rankOffers(

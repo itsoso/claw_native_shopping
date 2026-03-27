@@ -1,10 +1,40 @@
 import { describe, expect, it } from "vitest";
 
 import { buildSellerSimServer } from "../../apps/seller-sim/src/server.js";
+import {
+  buildSellerHttpUrl,
+  createSellerHttpClient,
+} from "../../packages/seller-protocol/src/httpClient.js";
 import { createSellerHttpPort } from "../../packages/seller-protocol/src/httpPort.js";
 import { createSellerHttpQuoteCollector } from "../../packages/seller-protocol/src/httpQuoteCollector.js";
 
 describe("seller http port", () => {
+  it("builds stable seller URLs across leading and trailing slash combinations", () => {
+    expect(buildSellerHttpUrl("http://127.0.0.1:3100", "/rfq")).toBe(
+      "http://127.0.0.1:3100/rfq",
+    );
+    expect(buildSellerHttpUrl("http://127.0.0.1:3100/", "quotes/123/hold")).toBe(
+      "http://127.0.0.1:3100/quotes/123/hold",
+    );
+  });
+
+  it("preserves seller request error wording through the shared HTTP client", async () => {
+    const client = createSellerHttpClient({
+      baseUrl: "http://127.0.0.1:3100",
+      fetch: async () =>
+        new Response(JSON.stringify({ error: "missing" }), {
+          status: 404,
+          headers: {
+            "content-type": "application/json",
+          },
+        }),
+    });
+
+    await expect(
+      client.postJson("/rfq", { rfqId: "rfq_1" }, "seller request failed: POST /rfq", (value) => value),
+    ).rejects.toThrow(/seller request failed: POST \/rfq returned HTTP 404/);
+  });
+
   it("drives quote, hold, and commit against seller-sim over HTTP", async () => {
     const app = buildSellerSimServer();
     await app.listen({ host: "127.0.0.1", port: 0 });

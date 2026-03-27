@@ -2,40 +2,19 @@ import type { FastifyInstance } from "fastify";
 import Fastify from "fastify";
 import { pathToFileURL } from "node:url";
 import { createMemoryStore } from "../../../packages/memory/src/store.js";
-import { createSellerHttpPort } from "../../../packages/seller-protocol/src/httpPort.js";
-import { createSellerHttpQuoteCollector } from "../../../packages/seller-protocol/src/httpQuoteCollector.js";
-import type { SellerQuoteCollector } from "../../../packages/orchestrator/src/service.js";
-import type { SellerProtocolPort } from "../../../packages/seller-protocol/src/port.js";
 import { registerIntentRoutes } from "./routes/intents.js";
 import { registerOrderRoutes } from "./routes/orders.js";
+import { resolveSellerRuntime, type SellerRuntimeOptions } from "./sellerRuntime.js";
 
-export type ServerStartOptions = {
+export type ServerStartOptions = SellerRuntimeOptions & {
   port?: number;
   host?: string;
-  sellerBaseUrl?: string;
-  sellerPort?: SellerProtocolPort;
-  quoteCollector?: SellerQuoteCollector;
 };
-
-const DEFAULT_SELLER_SIM_BASE_URL = "http://127.0.0.1:3100";
 
 export const buildServer = (options: ServerStartOptions = {}): FastifyInstance => {
   const app = Fastify({ logger: false });
   const store = createMemoryStore();
-  const configuredSellerBaseUrl = options.sellerBaseUrl ?? process.env.SELLER_SIM_BASE_URL;
-  const sellerBaseUrl = configuredSellerBaseUrl ?? DEFAULT_SELLER_SIM_BASE_URL;
-  const sellerPort =
-    options.sellerPort ??
-    createSellerHttpPort({
-      baseUrl: sellerBaseUrl
-    });
-  const quoteCollector =
-    options.quoteCollector ??
-    (options.sellerPort && !configuredSellerBaseUrl
-      ? undefined
-      : createSellerHttpQuoteCollector({
-          baseUrl: sellerBaseUrl
-        }));
+  const { sellerPort, quoteCollector } = resolveSellerRuntime(options);
 
   registerIntentRoutes(app, store, sellerPort, quoteCollector);
   registerOrderRoutes(app, store);
