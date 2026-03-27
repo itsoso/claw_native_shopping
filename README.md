@@ -36,6 +36,8 @@ To regenerate the `.pptx` deck locally:
 pnpm generate:deck:fundraising
 ```
 
+The generated deck now includes embedded speaker notes for each slide, so the `.pptx` is usable as a presenter file instead of only a visual export.
+
 ## Local Setup
 
 ```bash

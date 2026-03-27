@@ -27,6 +27,48 @@ const COLORS = {
 const FONT_HEAD = "Georgia";
 const FONT_BODY = "Aptos";
 const TOTAL_SLIDES = 10;
+const SPEAKER_NOTES = [
+  [
+    "我们做的不是一个更会推荐商品的电商前台。",
+    "我们要占据的是用户主代理背后的消费交易底座位置。",
+  ].join("\n\n"),
+  [
+    "今天购物真正贵的，不是支付动作，而是反复比较和判断的时间与脑力。",
+    "下一代电商的机会，不只是继续优化推荐，而是直接减少用户完成购买任务所需的认知劳动。",
+  ].join("\n\n"),
+  [
+    "过去的入口是 App、搜索和推荐，用户自己完成点击与决策。",
+    "未来用户会先把任务交给 Agent，再由 Agent 决定在哪里买、怎么买、什么时候买。",
+  ].join("\n\n"),
+  [
+    "Claw Native 不是 AI 导购，不是比价工具，也不是会聊天的电商助手。",
+    "我们把购买任务从页面操作流程升级成结构化代理流程，从而重构“怎么买”。",
+  ].join("\n\n"),
+  [
+    "这套系统已经不是概念图，而是能真实演示的最小闭环。",
+    "一端贴近用户真实购物现场，一端验证代理交易后端，二者已经连接起来。",
+  ].join("\n\n"),
+  [
+    "重点不是我们有页面，而是系统已经具备 seller 比选、策略判断和 explanation 这些代理式交易的核心步骤。",
+    "从建议到执行，中间不是黑箱，而是一条可回放、可审计的结构化链路。",
+  ].join("\n\n"),
+  [
+    "真正的壁垒不是单次回答质量，而是交易编排的位置。",
+    "如果我们占据 buyer-agent-first 的编排层，位置会比单点前台产品深得多。",
+  ].join("\n\n"),
+  [
+    "我们不是从大而全开始，而是从最能建立用户信任的高频消费任务切入。",
+    "先验证代理价值，再扩展到更多 category、seller 和协议层。",
+  ].join("\n\n"),
+  [
+    "商业模式不会停留在内容流量，而会沿着代理实际替用户完成的交易深度向上走。",
+    "谁掌握交易执行权，谁就掌握长期商业价值。",
+  ].join("\n\n"),
+  [
+    "我们不是在做一个更强的前台，而是在定义 Agent 时代新的交易操作系统。",
+    "Claw Native 想占据的是主代理时代的交易底座位置。",
+  ].join("\n\n"),
+];
 
 const pptx = new PptxGenJS();
 const SHAPE = pptx.ShapeType;
@@ -380,11 +422,16 @@ const addMiniWindow = (slide, x, y, w, h, title, lines, accent = COLORS.bronze) 
   });
 };
 
+const addSpeakerNotes = (slide, pageNumber) => {
+  slide.addNotes(SPEAKER_NOTES[pageNumber - 1]);
+};
+
 const buildSlide1 = (page) => {
   const slide = pptx.addSlide();
   slide.background = { color: COLORS.ink };
   addBackgroundMotif(slide);
   addPageChrome(slide, page, TOTAL_SLIDES, { dark: true, hideFooter: true });
+  addSpeakerNotes(slide, page);
 
   slide.addText("Claw Native", {
     x: 0.96,
@@ -445,6 +492,7 @@ const buildSlide2 = (page) => {
   const slide = pptx.addSlide();
   slide.background = { color: COLORS.ink };
   addPageChrome(slide, page, TOTAL_SLIDES, { dark: true });
+  addSpeakerNotes(slide, page);
   addTitle(
     slide,
     "今天购物最大的成本，是决策，不是支付",
@@ -522,6 +570,7 @@ const buildSlide3 = (page) => {
   const slide = pptx.addSlide();
   slide.background = { color: COLORS.ink };
   addPageChrome(slide, page, TOTAL_SLIDES, { dark: true });
+  addSpeakerNotes(slide, page);
   addTitle(
     slide,
     "电商入口，正在从 App 迁移到 Agent",
@@ -583,6 +632,7 @@ const buildSlide4 = (page) => {
   const slide = pptx.addSlide();
   slide.background = { color: COLORS.ink };
   addPageChrome(slide, page, TOTAL_SLIDES, { dark: true });
+  addSpeakerNotes(slide, page);
   addTitle(
     slide,
     "Claw Native：买方代理优先的消费决策与交易执行系统",
@@ -660,6 +710,7 @@ const buildSlide5 = (page) => {
   const slide = pptx.addSlide();
   slide.background = { color: COLORS.ink };
   addPageChrome(slide, page, TOTAL_SLIDES, { dark: true });
+  addSpeakerNotes(slide, page);
   addTitle(slide, "当前产品已经跑通最小闭环", "这不是 PPT 架构，而是可以真实演示的最小系统。");
 
   addMiniWindow(slide, 0.98, 2.04, 4.85, 3.78, "用户侧 / JD 购物副驾", [
@@ -708,6 +759,7 @@ const buildSlide6 = (page) => {
   const slide = pptx.addSlide();
   slide.background = { color: COLORS.ink };
   addPageChrome(slide, page, TOTAL_SLIDES, { dark: true });
+  addSpeakerNotes(slide, page);
   addTitle(
     slide,
     "系统已经能完成一条真实代理交易链路",
@@ -765,6 +817,7 @@ const buildSlide7 = (page) => {
   const slide = pptx.addSlide();
   slide.background = { color: COLORS.ink };
   addPageChrome(slide, page, TOTAL_SLIDES, { dark: true });
+  addSpeakerNotes(slide, page);
   addTitle(slide, "真正的壁垒，不在模型，而在交易编排", "长期护城河来自系统位置，而不是单次回答质量。");
 
   slide.addShape(SHAPE.ellipse, {
@@ -841,6 +894,7 @@ const buildSlide8 = (page) => {
   const slide = pptx.addSlide();
   slide.background = { color: COLORS.ink };
   addPageChrome(slide, page, TOTAL_SLIDES, { dark: true });
+  addSpeakerNotes(slide, page);
   addTitle(slide, "我们从高频消费切入，但目标不是小工具市场", "从最容易验证代理价值的场景切入，向更大的 agent commerce 扩展。");
 
   const steps = [
@@ -893,6 +947,7 @@ const buildSlide9 = (page) => {
   const slide = pptx.addSlide();
   slide.background = { color: COLORS.ink };
   addPageChrome(slide, page, TOTAL_SLIDES, { dark: true });
+  addSpeakerNotes(slide, page);
   addTitle(slide, "商业模式会从代理价值，走向交易价值", "谁掌握交易执行权，谁就掌握长期商业价值。");
 
   addCard(slide, {
@@ -942,6 +997,7 @@ const buildSlide10 = (page) => {
   slide.background = { color: COLORS.ink };
   addBackgroundMotif(slide);
   addPageChrome(slide, page, TOTAL_SLIDES, { dark: true, hideFooter: true });
+  addSpeakerNotes(slide, page);
 
   slide.addText("我们想占据的，不是新的流量位，", {
     x: 0.98,

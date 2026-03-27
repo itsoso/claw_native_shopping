@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
@@ -54,5 +55,23 @@ describe("fundraising docs", () => {
     expect(
       existsSync("docs/presentations/2026-03-27-claw-native-commerce-fundraising-deck.pptx"),
     ).toBe(true);
+  });
+
+  it("keeps the generated fundraising deck with speaker notes attached", () => {
+    const pptxEntries = execFileSync(
+      "unzip",
+      ["-Z1", "docs/presentations/2026-03-27-claw-native-commerce-fundraising-deck.pptx"],
+      { encoding: "utf8" },
+    )
+      .trim()
+      .split("\n");
+
+    const notesSlides = pptxEntries.filter(
+      (entry) =>
+        entry.startsWith("ppt/notesSlides/notesSlide") && entry.endsWith(".xml"),
+    );
+
+    expect(pptxEntries).toContain("ppt/notesMasters/notesMaster1.xml");
+    expect(notesSlides.length).toBe(10);
   });
 });
