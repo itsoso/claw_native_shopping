@@ -12,6 +12,10 @@ describe("fundraising docs", () => {
       "docs/2026-03-27-claw-native-commerce-deck-outline.zh-CN.md",
       "utf8",
     );
+    const deckCopy = readFileSync(
+      "docs/2026-03-27-claw-native-commerce-deck-copy.zh-CN.md",
+      "utf8",
+    );
 
     expect(bpSkeleton).toContain("融资 BP 文案骨架");
     expect(bpSkeleton).toContain("问题");
@@ -27,5 +31,13 @@ describe("fundraising docs", () => {
     expect(deckOutline).toContain("Slide 10: Ask / Vision");
     expect(deckOutline).toContain("每页一句讲稿");
     expect(deckOutline).toContain("交易底座");
+
+    expect(deckCopy).toContain("路演 Deck 逐页文案");
+    expect(deckCopy).toContain("Slide 1");
+    expect(deckCopy).toContain("Slide 10");
+    expect(deckCopy).toContain("页面标题");
+    expect(deckCopy).toContain("视觉建议");
+    expect(deckCopy).toContain("口播要点");
+    expect(deckCopy).toContain("常见讲偏的坑");
   });
 });

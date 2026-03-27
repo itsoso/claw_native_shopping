@@ -27,6 +27,7 @@ Use these when turning the architecture narrative into financing materials:
 
 - [Fundraising BP skeleton](./docs/2026-03-27-claw-native-commerce-fundraising-bp-skeleton.zh-CN.md)
 - [10-slide deck outline](./docs/2026-03-27-claw-native-commerce-deck-outline.zh-CN.md)
+- [10-slide deck copy](./docs/2026-03-27-claw-native-commerce-deck-copy.zh-CN.md)
 
 ## Local Setup
 
