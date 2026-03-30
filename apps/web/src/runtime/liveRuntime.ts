@@ -1,4 +1,8 @@
-import { getDemoScenarioFixture, getDemoScenarioSummary } from "../scenarios/index.js";
+import {
+  getDemoScenarioFixture,
+  getDemoScenarioOutcome,
+  getDemoScenarioSummary,
+} from "../scenarios/index.js";
 import type { LiveReplenishmentRequest } from "../../../../packages/contracts/src/live-replenishment.js";
 import type {
   LiveRuntime,
@@ -232,6 +236,7 @@ export const createLiveRuntime = (options: LiveRuntimeOptions): LiveRuntime => {
           explanationEvents,
         ),
         explanationTags: scenario.explanationTags,
+        outcome: getDemoScenarioOutcome(scenarioId, mode),
         health: {
           api: apiHealth,
           seller: sellerHealth,

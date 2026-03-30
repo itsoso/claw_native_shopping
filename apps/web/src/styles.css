@@ -175,6 +175,16 @@ button:disabled {
   opacity: 0.68;
 }
 
+.secondary-button {
+  border: 1px solid rgba(89, 61, 35, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--accent-strong);
+  padding: 12px 18px;
+  font-weight: 700;
+  box-shadow: 0 12px 26px rgba(79, 45, 18, 0.08);
+}
+
 .hero__runtime-stack {
   display: inline-flex;
   align-items: center;
@@ -323,11 +333,32 @@ button:disabled {
 }
 
 .scenario-picker,
+.context-panel,
 .flow-timeline,
 .explanation-panel,
+.outcome-panel,
 .ops-dock,
 .empty-run {
   padding: 24px;
+}
+
+.context-stack,
+.insight-stack {
+  display: grid;
+  gap: 20px;
+}
+
+.ops-summary {
+  margin-top: 20px;
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+}
+
+.ops-summary__status {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .mode-rail,
@@ -403,7 +434,9 @@ button:disabled {
 
 .scenario-card h3,
 .timeline__content h3,
-.health-card strong {
+.health-card strong,
+.context-card strong,
+.outcome-panel__hero strong {
   margin: 0;
   font-family: var(--font-display);
 }
@@ -474,6 +507,46 @@ button:disabled {
 .explanation-panel__summary {
   margin: 0;
   font-size: 1.02rem;
+}
+
+.context-panel__list {
+  display: grid;
+  gap: 12px;
+}
+
+.context-card {
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(89, 61, 35, 0.12);
+  background: rgba(255, 255, 255, 0.76);
+  padding: 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.context-card__label {
+  color: var(--accent-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+}
+
+.context-card p,
+.outcome-panel__note {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.outcome-panel__hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, rgba(255, 247, 235, 0.96), rgba(255, 255, 255, 0.72));
+  border: 1px solid rgba(201, 123, 43, 0.18);
 }
 
 .explanation-panel__tags {
@@ -575,8 +648,10 @@ button:disabled {
 
   .hero-panel,
   .scenario-picker,
+  .context-panel,
   .flow-timeline,
   .explanation-panel,
+  .outcome-panel,
   .ops-dock,
   .empty-run {
     padding: 18px;

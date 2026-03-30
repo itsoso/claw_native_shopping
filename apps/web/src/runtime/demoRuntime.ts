@@ -4,7 +4,11 @@ import type {
   ScenarioId,
   ScenarioMode,
 } from "./types.js";
-import { getDemoScenarioFixture, getDemoScenarioSummary } from "../scenarios/index.js";
+import {
+  getDemoScenarioFixture,
+  getDemoScenarioOutcome,
+  getDemoScenarioSummary,
+} from "../scenarios/index.js";
 
 const buildStep = (
   id: RunStepViewModel["id"],
@@ -41,6 +45,7 @@ export const runDemoScenario = async (
       buildStep("explanation", "决策解释", scenario.steps.explanation),
     ],
     explanationTags: scenario.explanationTags,
+    outcome: getDemoScenarioOutcome(scenarioId, mode),
     health: {
       api: createDemoHealth(),
       seller: createDemoHealth(),

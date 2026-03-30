@@ -1,10 +1,12 @@
 import { useRef, useState } from "react";
 
+import { ContextPanel } from "./components/ContextPanel.js";
 import { FlowTimeline } from "./components/FlowTimeline.js";
 import { Hero } from "./components/Hero.js";
 import { ExplanationPanel } from "./components/ExplanationPanel.js";
 import { FeedbackForm } from "./components/FeedbackForm.js";
 import { InterestForm } from "./components/InterestForm.js";
+import { OutcomePanel } from "./components/OutcomePanel.js";
 import { OpsDock } from "./components/OpsDock.js";
 import { ScenarioPicker } from "./components/ScenarioPicker.js";
 import { createLiveRuntime } from "./runtime/liveRuntime.js";
@@ -81,6 +83,7 @@ export function App() {
   );
   const [runViewModel, setRunViewModel] = useState<RunViewModel | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [opsDockOpen, setOpsDockOpen] = useState(false);
   const [runtimeHealthOverride, setRuntimeHealthOverride] =
     useState<RuntimeHealthState | null>(null);
   const [runtimeFailureMessage, setRuntimeFailureMessage] = useState<string | null>(null);
@@ -92,6 +95,13 @@ export function App() {
   const activeTags = runViewModel?.explanationTags ?? activeScenario?.tags ?? [];
   const activeRuntime = runViewModel?.runtime ?? selectedRuntime;
   const activeHealth = runtimeHealthOverride ?? runViewModel?.health ?? runtimeState.health;
+  const runtimeStatusMessage = runtimeFailureMessage
+    ? "联调失败，已回退到演示模式。"
+    : runViewModel
+      ? activeRuntime === "demo"
+        ? activeHealth.api.message ?? "演示路径已激活"
+        : "联调路径已准备，展开后可查看本地服务状态。"
+      : "默认显示演示模式，展开后可以切换到联调路径。";
 
   const handleSelectScenario = (scenarioId: ScenarioId): void => {
     runRequestIdRef.current += 1;
@@ -201,22 +211,54 @@ export function App() {
           scenarios={demoScenarios}
         />
 
-        <OpsDock
-          health={activeHealth}
-          runtime={activeRuntime}
-          onRuntimeSelect={handleRuntimeChange}
-        />
+        <div className="context-stack">
+          <ContextPanel
+            eyebrow="补货信号"
+            title="为什么现在要补货"
+            hint="先把需求讲清楚，再让代理决定怎么买。"
+            items={activeScenario?.signals ?? []}
+          />
+          <ContextPanel
+            eyebrow="守护规则"
+            title="代理守护规则"
+            hint="这些规则会约束自动成交，避免演示看起来像黑箱。"
+            items={activeScenario?.guardrails ?? []}
+          />
+        </div>
+      </section>
+
+      <section className="ops-summary">
+        <button
+          className="secondary-button"
+          type="button"
+          aria-expanded={opsDockOpen}
+          onClick={() => setOpsDockOpen((value) => !value)}
+        >
+          查看联调与运行状态
+        </button>
+        <p className="ops-summary__status">{runtimeStatusMessage}</p>
+
+        {opsDockOpen ? (
+          <OpsDock
+            health={activeHealth}
+            runtime={activeRuntime}
+            onRuntimeSelect={handleRuntimeChange}
+          />
+        ) : null}
       </section>
 
       {runViewModel ? (
         <>
           <section className="content-grid">
             <FlowTimeline steps={runViewModel.steps} />
-            <ExplanationPanel
-              mode={selectedMode}
-              summary={activeSummary}
-              tags={activeTags}
-            />
+            <div className="insight-stack">
+              <OutcomePanel mode={selectedMode} outcome={runViewModel.outcome} />
+              <ExplanationPanel
+                mode={selectedMode}
+                summary={activeSummary}
+                tags={activeTags}
+              />
+            </div>
           </section>
 
           <section className="intake-grid">

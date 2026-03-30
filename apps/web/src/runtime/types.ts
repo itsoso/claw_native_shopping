@@ -7,12 +7,27 @@ export type ScenarioId =
 
 export type ScenarioMode = "time_saving" | "safe" | "value";
 
+export type ScenarioContextItem = {
+  label: string;
+  value: string;
+  note?: string;
+};
+
+export type ScenarioOutcomeDefinition = {
+  itemLabel: string;
+  decisionLabel: string;
+  detail: string;
+  note?: string;
+};
+
 export type ScenarioDefinition = {
   id: ScenarioId;
   label: string;
   title: string;
   summary: string;
   tags: readonly string[];
+  signals: readonly ScenarioContextItem[];
+  guardrails: readonly ScenarioContextItem[];
 };
 
 export type RunStepViewModel = {
@@ -29,6 +44,7 @@ export type RunViewModel = {
   summary: string;
   steps: RunStepViewModel[];
   explanationTags: readonly string[];
+  outcome: ScenarioOutcomeDefinition;
   health: {
     api: ServiceHealthViewModel;
     seller: ServiceHealthViewModel;

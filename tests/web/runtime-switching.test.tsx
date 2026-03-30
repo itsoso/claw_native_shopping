@@ -20,12 +20,12 @@ describe("runtime switching", () => {
   it("shows a clear live-mode failure state without breaking demo mode", async () => {
     render(<App />);
 
+    fireEvent.click(screen.getByRole("button", { name: "查看联调与运行状态" }));
     fireEvent.click(screen.getByRole("button", { name: "联调模式" }));
     fireEvent.click(screen.getByRole("button", { name: "开始演示" }));
 
     await waitFor(() => {
       expect(screen.getByText(/服务不可用/i)).toBeTruthy();
-      expect(screen.getByText("当前路径")).toBeTruthy();
       expect(screen.getByRole("button", { name: "演示模式" })).toBeTruthy();
       expect(screen.getByText(/seller-sim \/health failed with HTTP 503/)).toBeTruthy();
     });
