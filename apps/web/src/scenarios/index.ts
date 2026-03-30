@@ -3,21 +3,24 @@ import type { ScenarioDefinition, ScenarioId, ScenarioMode } from "../runtime/ty
 export const demoScenarios: readonly ScenarioDefinition[] = [
   {
     id: "replenish-laundry",
-    title: "补货日常洗衣液",
-    summary: "演示 OpenClaw 如何接管高频日用品复购决策。",
-    tags: ["replenishment", "daily-use", "demo"],
+    label: "家庭默认",
+    title: "补货冰箱鸡蛋",
+    summary: "演示 OpenClaw 如何根据家庭库存、预算和偏好完成一次默认补货。",
+    tags: ["家庭补货", "冰箱库存", "高频复购"],
   },
   {
     id: "optimize-cart-threshold",
-    title: "优化购物车满减门槛",
-    summary: "演示 OpenClaw 如何帮用户更快完成整单凑单。",
-    tags: ["cart", "threshold", "demo"],
+    label: "办公室采购",
+    title: "办公室咖啡豆补货",
+    summary: "演示 OpenClaw 如何把门店或办公室的耗材采购收敛成单次执行。",
+    tags: ["办公室采购", "耗材补货", "预算控制"],
   },
   {
     id: "seller-eta-tradeoff",
-    title: "卖家时效与价格权衡",
-    summary: "演示 OpenClaw 如何解释时效、价格和稳定性的取舍。",
-    tags: ["eta", "price", "demo"],
+    label: "家庭权衡",
+    title: "冷链牛奶时效与价格权衡",
+    summary: "演示 OpenClaw 如何在送达时效、价格和稳定性之间给出默认选择。",
+    tags: ["时效权衡", "价格敏感", "家庭饮食"],
   },
 ];
 
@@ -38,16 +41,17 @@ const demoScenarioEntries: readonly [ScenarioId, DemoScenarioFixture][] = [
     "replenish-laundry",
     {
       id: "replenish-laundry",
-      title: "补货日常洗衣液",
-      summary: "演示 OpenClaw 如何接管高频日用品复购决策。",
-      tags: ["replenishment", "daily-use", "demo"],
-      explanationTags: ["replenishment", "repeat-purchase", "time_saving"],
+      label: "家庭默认",
+      title: "补货冰箱鸡蛋",
+      summary: "演示 OpenClaw 如何根据家庭库存、预算和偏好完成一次默认补货。",
+      tags: ["家庭补货", "冰箱库存", "高频复购"],
+      explanationTags: ["家庭补货", "高频复购", "更省时间"],
       steps: {
-        demand: "识别日常洗衣液即将用尽，并锁定补货目标。",
-        decision: "优先选择自营、次日达、规格稳定的常购款。",
-        cartPlan: "组合现有购物车和补货项，尽量减少用户操作。",
-        sellerOrder: "将订单路由到可解释、可追踪的默认履约路径。",
-        explanation: "说明为什么当前选择更省时、风险更低、可直接确认。",
+        demand: "识别冰箱里鸡蛋库存低于阈值，并把本周早餐需求转成补货意图。",
+        decision: "优先选择能在预算内稳定履约的常购规格，避免用户重复比价。",
+        cartPlan: "把补货动作收敛成一次可确认的家庭采购，不要求用户重新挑选商品。",
+        sellerOrder: "将订单路由到可解释、可追踪的默认履约路径，保证后续能追责。",
+        explanation: "说明为什么这个默认选择既省时间，也没有突破家庭预算和偏好。",
       },
     },
   ],
@@ -55,16 +59,17 @@ const demoScenarioEntries: readonly [ScenarioId, DemoScenarioFixture][] = [
     "optimize-cart-threshold",
     {
       id: "optimize-cart-threshold",
-      title: "优化购物车满减门槛",
-      summary: "演示 OpenClaw 如何帮用户更快完成整单凑单。",
-      tags: ["cart", "threshold", "demo"],
-      explanationTags: ["cart-optimization", "threshold", "value"],
+      label: "办公室采购",
+      title: "办公室咖啡豆补货",
+      summary: "演示 OpenClaw 如何把门店或办公室的耗材采购收敛成单次执行。",
+      tags: ["办公室采购", "耗材补货", "预算控制"],
+      explanationTags: ["办公室采购", "预算控制", "更划算"],
       steps: {
-        demand: "识别购物车距离满减门槛的差额。",
-        decision: "建议最少新增或替换的商品组合。",
-        cartPlan: "把凑单动作收敛到最少操作数。",
-        sellerOrder: "保持订单结构清晰，便于后续复核。",
-        explanation: "解释为何这个组合在时间成本和优惠收益之间最平衡。",
+        demand: "识别办公室咖啡豆和纸巾库存都接近补货点，并合并成一次采购任务。",
+        decision: "在预算限制下优先挑选常用品项，减少团队审批成本。",
+        cartPlan: "把采购动作压缩成一张可执行的采购单，便于行政或门店负责人复核。",
+        sellerOrder: "保留单一履约路径，避免办公室采购拆成多单后失去可控性。",
+        explanation: "解释为何这个方案兼顾成本、稳定供给和最少人工介入。",
       },
     },
   ],
@@ -72,16 +77,17 @@ const demoScenarioEntries: readonly [ScenarioId, DemoScenarioFixture][] = [
     "seller-eta-tradeoff",
     {
       id: "seller-eta-tradeoff",
-      title: "卖家时效与价格权衡",
-      summary: "演示 OpenClaw 如何解释时效、价格和稳定性的取舍。",
-      tags: ["eta", "price", "demo"],
-      explanationTags: ["eta", "price", "safe"],
+      label: "家庭权衡",
+      title: "冷链牛奶时效与价格权衡",
+      summary: "演示 OpenClaw 如何在送达时效、价格和稳定性之间给出默认选择。",
+      tags: ["时效权衡", "价格敏感", "家庭饮食"],
+      explanationTags: ["时效优先", "风险控制", "更稳妥"],
       steps: {
-        demand: "识别用户对时效、价格和稳定性的约束。",
-        decision: "在更快与更省之间选出默认安全解。",
-        cartPlan: "整理成可执行的单一购买路径。",
-        sellerOrder: "优先保留更稳定的履约链路。",
-        explanation: "说明为什么该方案更符合当前模式下的风险偏好。",
+        demand: "识别家庭对冷链商品的时效要求，以及对价格和品牌接受度的边界。",
+        decision: "在更快送达和更低价格之间选出当前模式下更稳妥的默认解。",
+        cartPlan: "把这次补货整理成一条可追踪的购买路径，而不是把判断交回给用户。",
+        sellerOrder: "优先保留履约更稳定的卖家链路，降低生鲜或冷链出错概率。",
+        explanation: "说明为什么这个选择更符合当前风险偏好，以及哪些地方在真实交易中需要审批。",
       },
     },
   ],
@@ -101,12 +107,12 @@ export const getDemoScenarioSummary = (
   const scenario = getDemoScenarioFixture(scenarioId);
 
   if (mode === "time_saving") {
-    return `OpenClaw 帮你用更少时间完成 ${scenario.title}，不需要额外判断。`;
+    return `OpenClaw 会先替你完成 ${scenario.title} 的默认决策，把时间成本留给真正需要人工判断的事情。`;
   }
 
   if (mode === "safe") {
-    return `OpenClaw 先给出更稳妥的默认解，再把原因解释清楚：${scenario.summary}`;
+    return `OpenClaw 会先给出更稳妥的默认解，再把原因解释清楚：${scenario.summary}`;
   }
 
-  return `OpenClaw 把 ${scenario.title} 收敛成更划算、可执行的购买方案。`;
+  return `OpenClaw 会把 ${scenario.title} 收敛成更划算、可执行、仍然可追溯的购买方案。`;
 };

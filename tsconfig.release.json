@@ -1,0 +1,27 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM"],
+    "types": ["node", "vitest/globals", "react", "react-dom"]
+  },
+  "include": [
+    "apps/api/src/**/*.ts",
+    "apps/seller-sim/src/**/*.ts",
+    "apps/web/src/**/*.ts",
+    "apps/web/src/**/*.tsx",
+    "packages/*/src/**/*.ts",
+    "tests/config/**/*.ts",
+    "tests/integration/**/*.ts",
+    "tests/web/**/*.ts",
+    "tests/web/**/*.tsx"
+  ],
+  "exclude": [
+    "apps/browser-extension/**",
+    "tests/browser-extension/**",
+    "tests/e2e/**",
+    "node_modules",
+    "dist",
+    "coverage"
+  ]
+}

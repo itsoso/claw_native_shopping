@@ -18,12 +18,11 @@ export function Hero({ activeScenario, activeRuntime, isRunning, mode, onRun }: 
   return (
     <section className="hero panel hero-panel">
       <div className="hero__copy">
-        <p className="eyebrow">Showroom + Control Room</p>
-        <h1>OpenClaw 不是帮人逛电商，而是替人完成消费决策。</h1>
-        <h2 className="sr-only">OpenClaw does not help users browse.</h2>
+        <p className="eyebrow">家庭补货发布版</p>
+        <h1>OpenClaw 不是帮你搜商品，而是替你完成补货决策。</h1>
+        <h2 className="sr-only">OpenClaw 会替用户完成补货决策，而不是只做搜索和推荐。</h2>
         <p className="hero__lede">
-          面向投资人和合作方的验证页，先给出清晰的产品叙事，再在同一屏里跑通可操作的 demo
-          path。
+          这是一个面向潜在用户的可运行演示：先识别库存需求，再比较方案、执行策略判断，并把为什么这么买解释清楚。
         </p>
 
         <div className="hero__actions">
@@ -33,7 +32,7 @@ export function Hero({ activeScenario, activeRuntime, isRunning, mode, onRun }: 
 
           <div className="hero__runtime-stack" aria-label="current runtime and mode">
             <span className="runtime-pill runtime-pill--warm">
-              {activeRuntime === "demo" ? "Demo path" : "Live path"}
+              {activeRuntime === "demo" ? "演示路径" : "联调路径"}
             </span>
             <span className="runtime-pill">{modeLabel[mode]}</span>
           </div>

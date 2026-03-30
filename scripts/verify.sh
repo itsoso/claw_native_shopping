@@ -2,5 +2,5 @@
 set -euo pipefail
 
 pnpm lint
-pnpm typecheck
-pnpm test
+pnpm typecheck:release
+pnpm test:release

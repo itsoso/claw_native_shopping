@@ -201,6 +201,7 @@ describe("buyer api", () => {
           requestedCategory: string;
           requestedQuantity: number;
           budgetLimit: number;
+          rankedOfferCount: number;
         };
       };
 

@@ -1,107 +1,106 @@
-# OpenClaw Shopping Copilot MVP
+# OpenClaw Release V1
 
-Chrome-compatible JD shopping copilot MVP for `个护家清 + 日用品复购`. The extension injects an inline decision card on `京东` product and cart pages, keeps decision mode and validation events local-first, and uses deterministic rules instead of model calls.
+OpenClaw 是一个面向中文用户的 Agent Native 补货产品。它不是搜索框、聊天框，或者浏览器导购插件的壳，而是一个会替用户完成补货决策的本地可运行产品。
 
-## What It Covers
+当前这版 `V1` 的发布面向两类场景：
 
-- JD product pages: one-line recommendation, reason view, and decision mode switching
-- JD cart pages: one executable cart plan with a single apply action
-- Local-first storage: preferences and validation events stay in extension storage
-- Browser smoke tests: Playwright verifies the injected UI against static JD fixtures
-- Web validation console: a single-page Demo/Live showroom for investor and operator walkthroughs
+- 主场景：家庭补货
+- 次场景：办公室 / 小门店采购
 
-## Architecture Docs
+这不是一个真实下单系统。它是一个可以稳定演示、可解释、可留资、可收集反馈的发布版产品。
 
-Use the root [ARCHITECTURE.md](./ARCHITECTURE.md) as the entrypoint for the current system docs.
+## 发布版包含什么
 
-The main architecture references are:
+- 一个默认展示家庭补货的 Web 产品：`apps/web`
+- 一个支撑实时联调和反馈收集的本地 API：`apps/api`
+- 一个本地 seller runtime：`apps/seller-sim`
+- 一条真实运行的解释链：需求、策略、卖家选择、订单解释
+- 两个真实可用的转化动作：
+  - 提交反馈
+  - 邮箱留资
 
-- [Current architecture baseline](./docs/2026-03-26-claw-native-commerce-current-architecture.zh-CN.md)
-- [Investor brief](./docs/2026-03-26-claw-native-commerce-investor-brief.zh-CN.md)
-- [System breakdown](./docs/2026-03-26-claw-native-commerce-system-breakdown.zh-CN.md)
-- [Roadshow narrative](./docs/2026-03-27-claw-native-commerce-roadshow-narrative.zh-CN.md)
+## 快速开始
 
-## Fundraising Docs
-
-Use these when turning the architecture narrative into financing materials:
-
-- [Fundraising BP skeleton](./docs/2026-03-27-claw-native-commerce-fundraising-bp-skeleton.zh-CN.md)
-- [10-slide deck outline](./docs/2026-03-27-claw-native-commerce-deck-outline.zh-CN.md)
-- [10-slide deck copy](./docs/2026-03-27-claw-native-commerce-deck-copy.zh-CN.md)
-- [Generated fundraising deck (.pptx)](./docs/presentations/2026-03-27-claw-native-commerce-fundraising-deck.pptx)
-
-To regenerate the `.pptx` deck locally:
-
-```bash
-pnpm generate:deck:fundraising
-```
-
-The generated deck now includes embedded speaker notes for each slide, so the `.pptx` is usable as a presenter file instead of only a visual export.
-
-## Local Setup
+先安装依赖：
 
 ```bash
 pnpm install
-pnpm build
-pnpm test
-pnpm test:e2e
 ```
 
-For iterative extension work, run:
+一条命令启动发布版：
 
 ```bash
-pnpm dev
+pnpm start:release
 ```
 
-## OpenClaw Web Validation Console
+启动后打开：
 
-The repository also ships a single-page validation console for investor demos and internal verification. It keeps the story and the live system on the same screen: default `Demo` mode is stable and repeatable, while `Live` mode is browser-runnable in local Vite `dev` and `preview` through the app's built-in same-origin proxy.
+- [http://localhost:4174](http://localhost:4174)
 
-Start the console and local services in separate terminals:
+如果你在迭代界面而不是做稳定演示，可以用开发模式：
 
 ```bash
+pnpm dev:release
+```
+
+如果本地端口被占用，可以覆盖默认端口：
+
+```bash
+OPENCLAW_RELEASE_WEB_PORT=4274 \
+OPENCLAW_RELEASE_API_PORT=4400 \
+OPENCLAW_RELEASE_SELLER_PORT=4401 \
+pnpm start:release
+```
+
+## 验证命令
+
+发布版验证：
+
+```bash
+pnpm verify:release
+```
+
+浏览器发布流验证：
+
+```bash
+pnpm test:e2e:release
+```
+
+如果你需要单独运行某个服务：
+
+```bash
+pnpm start:api
+pnpm start:seller-sim
 pnpm dev:web
-pnpm dev:api
-pnpm dev:seller-sim
+pnpm preview:web
 ```
 
-Then open the Vite URL shown by `pnpm dev:web` and keep the page in `Demo` for a stable story, or switch to `Live` and click `开始演示` for the local browser path. `pnpm preview:web` supports the same local Live flow. If you need non-default backend targets, override the proxy with `OPENCLAW_LIVE_API_TARGET` and `OPENCLAW_LIVE_SELLER_TARGET` before starting the web app. seller-sim now participates in the real replenishment path for quote collection, offer ranking, hold, and commit, and the selected scenario and mode are forwarded into the real Live buyer API request instead of only changing copy around the page. The full walkthrough lives in [`docs/web-validation-console.md`](docs/web-validation-console.md).
+## 反馈与留资
 
-## Load In Chrome
+发布版会把反馈和候补邮箱写到本地目录：
 
-1. Run `pnpm build` or keep `pnpm dev` running.
-2. Open `chrome://extensions`.
-3. Enable `Developer mode`.
-4. Choose `Load unpacked`.
-5. Select `apps/browser-extension/.output/chrome-mv3`.
-6. Open a supported 京东 product page or cart page and confirm the OpenClaw card appears in the bottom-right corner.
+- `.local/release-intake/feedback.jsonl`
+- `.local/release-intake/interest.jsonl`
 
-## Operator Workflow
+这个目录已经被 `.gitignore` 忽略，默认不会进入版本库。
 
-1. Validate on JD item pages first.
-2. Switch between `更省时间` / `更稳妥` / `更划算` and confirm the recommendation updates.
-3. Move to the cart page and confirm the executable cart plan renders with only one apply action.
-4. Run `pnpm test:e2e` before sharing a build with operators.
+## 架构入口
 
-## Local Event Data
+优先阅读下面几个文件：
 
-Validation data is stored in extension-local storage through `chrome.storage.local`.
+- [ARCHITECTURE.md](./ARCHITECTURE.md)
+- [Release V1 设计文档](./docs/plans/2026-03-29-openclaw-release-v1-design.md)
+- [Release V1 实施计划](./docs/plans/2026-03-29-openclaw-release-v1.md)
+- [Web 发布版说明](./docs/web-validation-console.md)
 
-- Decision mode key: `decision-mode`
-- Event history keys: `event-history:<timestamp>:<sequence>`
+## 当前边界
 
-To inspect the stored values during operator validation:
+这版发布不包含：
 
-1. Open Chrome DevTools on a page where the extension is active.
-2. Switch the console execution context to the extension content script.
-3. Run `await chrome.storage.local.get(null)` and inspect the event history entries.
+- 真实支付
+- 真实商城接入
+- 多用户系统
+- 云端部署流水线
+- browser extension 作为发布阻塞项
 
-## Success Signals
-
-Track the MVP against these signals:
-
-- `recommendation acceptance rate`
-- `cart plan application rate`
-- `weekly repeat usage`
-
-The detailed checklist lives in [`docs/mvp-validation-checklist.md`](docs/mvp-validation-checklist.md).
+仓库里仍然保留 `apps/browser-extension` 和旧的验证资产，但它们不是当前 `V1` 的发布表面，也不会阻塞 `verify:release`。

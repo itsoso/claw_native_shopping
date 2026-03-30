@@ -249,11 +249,58 @@ button:disabled {
 }
 
 .control-grid,
-.content-grid {
+.content-grid,
+.intake-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.8fr);
   gap: 20px;
   margin-top: 20px;
+}
+
+.intake-panel {
+  padding: 24px;
+}
+
+.field {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.field__label {
+  font-size: 0.92rem;
+  color: var(--accent-strong);
+}
+
+.field__input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.82);
+  padding: 12px 14px;
+  color: var(--text);
+}
+
+.field__input--textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+
+.intake-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.intake-panel__status {
+  margin: 0;
+  color: var(--accent-strong);
+}
+
+.intake-panel__status--error {
+  color: #b3471f;
 }
 
 .panel__header {

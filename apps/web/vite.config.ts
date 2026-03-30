@@ -1,9 +1,11 @@
 import { defineConfig, type ProxyOptions } from "vite";
 
-export const DEFAULT_LIVE_API_TARGET = "http://127.0.0.1:3000";
-export const DEFAULT_LIVE_SELLER_TARGET = "http://127.0.0.1:3100";
+export const DEFAULT_LIVE_API_TARGET = "http://127.0.0.1:4300";
+export const DEFAULT_LIVE_SELLER_TARGET = "http://127.0.0.1:4301";
 export const LIVE_API_TARGET_ENV = "OPENCLAW_LIVE_API_TARGET";
 export const LIVE_SELLER_TARGET_ENV = "OPENCLAW_LIVE_SELLER_TARGET";
+export const WEB_DEFAULT_HOST = "0.0.0.0";
+export const WEB_DEFAULT_PORT = 4174;
 
 const rewriteLivePath =
   (prefix: string) =>
@@ -34,9 +36,15 @@ export const liveProxyConfig = createLiveProxyConfig();
 
 export default defineConfig({
   server: {
+    host: WEB_DEFAULT_HOST,
+    port: WEB_DEFAULT_PORT,
+    strictPort: true,
     proxy: liveProxyConfig,
   },
   preview: {
+    host: WEB_DEFAULT_HOST,
+    port: WEB_DEFAULT_PORT,
+    strictPort: true,
     proxy: liveProxyConfig,
   },
 });

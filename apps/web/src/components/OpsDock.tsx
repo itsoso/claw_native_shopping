@@ -10,9 +10,9 @@ type OpsDockProps = {
 };
 
 const healthLabel: Record<ServiceHealthViewModel["status"], string> = {
-  unknown: "Unknown",
-  ok: "Healthy",
-  error: "Error",
+  unknown: "未检查",
+  ok: "健康",
+  error: "异常",
 };
 
 export function OpsDock({ health, onRuntimeSelect, runtime }: OpsDockProps) {
@@ -20,8 +20,8 @@ export function OpsDock({ health, onRuntimeSelect, runtime }: OpsDockProps) {
     <aside className="panel ops-dock">
       <div className="panel__header">
         <div>
-          <p className="eyebrow">Ops Dock</p>
-          <h2>运行状态与服务健康。</h2>
+          <p className="eyebrow">运行状态</p>
+          <h2>查看当前模式和本地服务健康状态。</h2>
         </div>
       </div>
 
@@ -33,7 +33,7 @@ export function OpsDock({ health, onRuntimeSelect, runtime }: OpsDockProps) {
           type="button"
           onClick={() => onRuntimeSelect("demo")}
         >
-          Demo mode
+          演示模式
         </button>
         <button
           className="mode-chip mode-chip--runtime"
@@ -42,13 +42,13 @@ export function OpsDock({ health, onRuntimeSelect, runtime }: OpsDockProps) {
           type="button"
           onClick={() => onRuntimeSelect("live")}
         >
-          Live
+          联调模式
         </button>
       </div>
 
       <div className="runtime-summary">
-        <span className="runtime-summary__label">Runtime State</span>
-        <strong>{runtime === "demo" ? "Demo" : "Live"}</strong>
+        <span className="runtime-summary__label">当前路径</span>
+        <strong>{runtime === "demo" ? "演示模式" : "联调模式"}</strong>
       </div>
 
       <div className="health-grid">

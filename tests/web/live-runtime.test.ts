@@ -103,22 +103,22 @@ describe("live runtime", () => {
       demoScenarioFixtures["replenish-laundry"].explanationTags,
     );
     expect(result.steps.find((step) => step.id === "demand")?.detail).toContain(
-      "seller-eta-balance",
+      "冷链牛奶补货",
     );
     expect(result.steps.find((step) => step.id === "decision")?.detail).toContain(
       "55",
     );
     expect(result.steps.find((step) => step.id === "decision")?.detail).toContain(
-      "ranked 2 seller options",
+      "已比较 2 个卖家候选",
     );
     expect(result.steps.find((step) => step.id === "seller-order")?.detail).toContain(
-      "2 ranked offers",
+      "2 个排序报价",
     );
     expect(result.steps.find((step) => step.id === "seller-order")?.detail).toContain(
       "seller_1",
     );
     expect(result.steps.find((step) => step.id === "explanation")?.detail).toContain(
-      "decision_made",
+      "审计事件链",
     );
     expect(result.steps.some((step) => step.id === "explanation")).toBe(true);
   });

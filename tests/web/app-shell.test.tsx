@@ -12,7 +12,7 @@ describe("Web validation shell", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: /OpenClaw does not help users browse/i,
+        name: /OpenClaw 不是帮你搜商品，而是替你完成补货决策/i,
       }),
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "开始演示" })).toBeTruthy();

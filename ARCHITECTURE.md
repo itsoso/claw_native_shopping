@@ -1,97 +1,138 @@
-# Claw Native Architecture
+# OpenClaw Release V1 Architecture
 
-This repository now contains three complementary architecture documents that explain the same system for different readers.
+## 一句话
 
-## Recommended Reading Order
+OpenClaw Release V1 是一个本地优先、中文优先的 Agent Native 补货产品。`apps/web` 是发布表面，`apps/api` 和 `apps/seller-sim` 是支撑运行与解释的本地服务。
 
-### 1. Canonical Current-State Architecture
+## 发布边界
 
-Start here if you want the most accurate description of what is actually implemented today.
+当前发布版只对下面这条链路负责：
 
-- [当前系统架构说明](./docs/2026-03-26-claw-native-commerce-current-architecture.zh-CN.md)
+1. 用户进入 Web 页面
+2. 选择家庭补货或办公室采购场景
+3. 运行 `Demo` 或本地 `Live`
+4. 查看决策时间线与订单解释
+5. 提交反馈或留下邮箱
 
-This document explains:
+不在发布边界内的内容：
 
-- what Claw Native is right now
-- how the browser extension, buyer API, orchestrator, seller protocol, and seller-sim fit together
-- what is implemented vs what remains aspirational
+- browser extension 的健康度
+- 真实支付与真实下单
+- 外部商城接入
+- 云端多租户能力
 
-### 2. Investor / Partner Brief
+## 运行结构
 
-Read this when you need a concise external explanation of why the architecture matters.
+```mermaid
+flowchart LR
+    User["用户浏览器"] --> Web["apps/web
+    React + Vite 发布页"]
+    Web --> Api["apps/api
+    补货编排 + intake"]
+    Api --> Orchestrator["packages/*
+    demand / policy / offer / checkout / memory"]
+    Api --> Seller["apps/seller-sim
+    本地卖家运行时"]
+    Web --> Intake[".local/release-intake
+    feedback + interest"]
+```
 
-- [投资人简版说明](./docs/2026-03-26-claw-native-commerce-investor-brief.zh-CN.md)
+## 模块职责
 
-This version focuses on:
+### `apps/web`
 
-- why Claw Native is not a traditional ecommerce frontend
-- why buyer-agent-first commerce is strategically important
-- what the current MVP already proves
+发布产品本身，负责：
 
-### 3. Team System Breakdown
+- 首页叙事
+- 场景切换
+- Demo / Live 路径切换
+- 时间线展示
+- 解释面板
+- 反馈和邮箱表单
 
-Read this when you need to work on the system, extend it, or reason about boundaries.
+### `apps/api`
 
-- [团队系统拆解版](./docs/2026-03-26-claw-native-commerce-system-breakdown.zh-CN.md)
+本地 buyer API，负责：
 
-This version focuses on:
+- 接收补货 intent
+- 调用 orchestrator
+- 返回 explanation
+- 本地持久化反馈和邮箱
 
-- subsystem responsibilities
-- runtime flow
-- domain package boundaries
-- architecture guardrails
-- the next engineering steps
+### `apps/seller-sim`
 
-### 4. Roadshow Narrative
+本地 seller runtime，负责：
 
-Read this when you need to explain the architecture verbally in a pitch or partner meeting.
+- 询价
+- 排序
+- 锁库
+- 提交
 
-- [路演口径版](./docs/2026-03-27-claw-native-commerce-roadshow-narrative.zh-CN.md)
+### `packages/*`
 
-This version focuses on:
+共享领域能力，负责：
 
-- how to tell the story in 30 seconds, 3 minutes, and 10 minutes
-- what to emphasize to investors
-- what objections to expect
+- demand planner
+- policy engine
+- offer evaluator
+- checkout
+- orchestration
+- memory
 
-## System In One Paragraph
+## 运行模式
 
-Claw Native is currently a buyer-agent-first commerce system with two connected product surfaces:
+### `Demo`
 
-- a JD shopping copilot browser extension that helps users decide how to buy
-- a Native Commerce backend that turns structured purchase requests into orchestrated sourcing, seller selection, policy evaluation, hold, commit, and explanation
+默认路径。特点：
 
-The current live architecture is not yet a production marketplace, but it already proves the key shape of the system:
+- 不依赖本地服务
+- 页面稳定
+- 适合首次体验和对外分享
 
-- user-facing shopping assistance
-- buyer API as a structured entrypoint
-- an orchestrator as the single transaction brain
-- seller protocol as the boundary to the seller network
-- auditability as a first-class requirement
+### `Live`
 
-## Current Repository Shape
+联调路径。特点：
 
-The main runtime layers live here:
+- 依赖本地 `apps/api` 和 `apps/seller-sim`
+- 用来证明前端并不是假数据
+- 不是用户第一次进入时必须依赖的路径
 
-- `apps/browser-extension`
-- `apps/api`
-- `apps/seller-sim`
-- `apps/web`
-- `packages/orchestrator`
-- `packages/seller-protocol`
-- `packages/demand-planner`
-- `packages/policy-engine`
-- `packages/offer-evaluator`
-- `packages/checkout`
-- `packages/memory`
+## 本地数据
 
-## What This Repository Is Not
+发布版当前只持久化两类数据：
 
-To avoid architectural drift, keep these distinctions explicit:
+- 用户反馈
+- 候补邮箱
 
-- This is not just a browser extension project.
-- This is not just a seller simulator demo.
-- This is not yet a production ecommerce platform.
-- This is not a chat UI wrapped around model calls.
+默认目录：
 
-It is a working baseline for an agent commerce stack.
+- `.local/release-intake`
+
+这让 `V1` 保持真实可用，但不引入数据库和部署依赖。
+
+## 运行命令
+
+一键启动：
+
+```bash
+pnpm start:release
+```
+
+一键验证：
+
+```bash
+pnpm verify:release
+```
+
+浏览器发布流验证：
+
+```bash
+pnpm test:e2e:release
+```
+
+## 架构原则
+
+- 发布版只为 `apps/web` 负责，不为整个历史仓库背锅
+- Demo 默认稳定，Live 作为可信佐证
+- 所有用户 CTA 都必须真实落地
+- README、脚本、测试和文档必须描述同一个产品

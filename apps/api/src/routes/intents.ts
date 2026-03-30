@@ -33,7 +33,7 @@ export const registerIntentRoutes = (
     const result = await runProcurementScenario({
       store,
       sellerPort,
-      quoteCollector,
+      ...(quoteCollector ? { quoteCollector } : {}),
       planningInput: profile.planningInput,
       policyAutoApproveLimit: profile.policyAutoApproveLimit,
       requestMetadata: profile.requestMetadata,

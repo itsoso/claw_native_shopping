@@ -187,8 +187,12 @@ const buildSnapshotContext = (
     deliveryWindow: { latestAt: string };
   },
 ): SnapshotContext => ({
-  selectedScenarioId: fixture.requestMetadata?.scenarioId,
-  selectedMode: fixture.requestMetadata?.mode,
+  ...(fixture.requestMetadata?.scenarioId
+    ? { selectedScenarioId: fixture.requestMetadata.scenarioId }
+    : {}),
+  ...(fixture.requestMetadata?.mode
+    ? { selectedMode: fixture.requestMetadata.mode }
+    : {}),
   requestedCategory: intent.category,
   requestedQuantity: intent.quantity,
   budgetLimit: intent.budgetLimit,
@@ -230,7 +234,7 @@ const buildQuoteSelectionContext = (
 
   return {
     rankedOfferCount: quoteSelection.rankedOffers.length,
-    selectedOfferScore: selectedOffer?.score,
+    ...(selectedOffer ? { selectedOfferScore: selectedOffer.score } : {}),
     selectedSellerId: selectedQuote.sellerAgentId,
   };
 };

@@ -80,6 +80,9 @@ describe("procurement service", () => {
     });
 
     expect(result.status).toBe("approvalRequired");
+    if (result.status !== "approvalRequired") {
+      throw new Error(`expected approvalRequired, received ${result.status}`);
+    }
     expect(result.reason).toBe("approval_required");
     expect(result.snapshot.status).toBe("approvalWait");
     expect(result.snapshot.policyDecision).toBe("approval_required");
@@ -98,6 +101,9 @@ describe("procurement service", () => {
     });
 
     expect(result.status).toBe("retry");
+    if (result.status !== "retry") {
+      throw new Error(`expected retry, received ${result.status}`);
+    }
     expect(result.reason).toBe("inventory_hold_failed");
     expect(result.snapshot.status).toBe("retry");
     expect(result.snapshot.quoteId).toMatch(/^quote_/);

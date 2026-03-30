@@ -6,7 +6,9 @@ import viteConfig, {
   DEFAULT_LIVE_SELLER_TARGET,
   LIVE_API_TARGET_ENV,
   LIVE_SELLER_TARGET_ENV,
-} from "../../apps/web/vite.config.ts";
+  WEB_DEFAULT_HOST,
+  WEB_DEFAULT_PORT,
+} from "../../apps/web/vite.config.js";
 
 type ProxyTarget = {
   target?: string;
@@ -16,8 +18,18 @@ type ProxyTarget = {
 describe("web live proxy config", () => {
   it("configures matching live proxies for dev and preview", () => {
     const config = viteConfig as {
-      server?: { proxy?: Record<string, string | ProxyTarget> };
-      preview?: { proxy?: Record<string, string | ProxyTarget> };
+      server?: {
+        host?: string;
+        port?: number;
+        strictPort?: boolean;
+        proxy?: Record<string, string | ProxyTarget>;
+      };
+      preview?: {
+        host?: string;
+        port?: number;
+        strictPort?: boolean;
+        proxy?: Record<string, string | ProxyTarget>;
+      };
     };
 
     const serverApiProxy = config.server?.proxy?.["/api/live"] as ProxyTarget | undefined;
@@ -29,6 +41,12 @@ describe("web live proxy config", () => {
     expect(serverSellerProxy?.target).toBe(DEFAULT_LIVE_SELLER_TARGET);
     expect(previewApiProxy?.target).toBe(DEFAULT_LIVE_API_TARGET);
     expect(previewSellerProxy?.target).toBe(DEFAULT_LIVE_SELLER_TARGET);
+    expect(config.server?.host).toBe(WEB_DEFAULT_HOST);
+    expect(config.server?.port).toBe(WEB_DEFAULT_PORT);
+    expect(config.server?.strictPort).toBe(true);
+    expect(config.preview?.host).toBe(WEB_DEFAULT_HOST);
+    expect(config.preview?.port).toBe(WEB_DEFAULT_PORT);
+    expect(config.preview?.strictPort).toBe(true);
     expect(serverApiProxy?.rewrite?.("/api/live/health")).toBe("/health");
     expect(serverSellerProxy?.rewrite?.("/seller/live/health")).toBe("/health");
     expect(previewApiProxy?.rewrite?.("/api/live/intents/replenish")).toBe(

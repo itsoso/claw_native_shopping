@@ -5,10 +5,10 @@ type FlowTimelineProps = {
 };
 
 const statusCopy: Record<RunStepViewModel["status"], string> = {
-  pending: "Pending",
-  running: "Running",
-  complete: "Complete",
-  error: "Error",
+  pending: "待执行",
+  running: "进行中",
+  complete: "已完成",
+  error: "异常",
 };
 
 export function FlowTimeline({ steps }: FlowTimelineProps) {
@@ -16,10 +16,10 @@ export function FlowTimeline({ steps }: FlowTimelineProps) {
     <section className="panel flow-timeline">
       <div className="panel__header">
         <div>
-          <p className="eyebrow">Flow Timeline</p>
-          <h2>把购物任务拆成可验证的机器决策。</h2>
+          <p className="eyebrow">决策时间线</p>
+          <h2>把一次补货任务拆成可验证、可解释的机器决策。</h2>
         </div>
-        <p className="panel__hint">每一步都保留解释，便于演示和回看。</p>
+        <p className="panel__hint">每一步都保留解释，方便你回看代理为什么这么做。</p>
       </div>
 
       <ol className="timeline">

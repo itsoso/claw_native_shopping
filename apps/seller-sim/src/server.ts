@@ -19,7 +19,7 @@ export const startSellerSimServer = async (
 ): Promise<{ app: FastifyInstance; baseUrl: string }> => {
   const app = buildSellerSimServer();
   const host = options.host ?? process.env.HOST ?? "127.0.0.1";
-  const port = options.port ?? Number.parseInt(process.env.PORT ?? "3100", 10);
+  const port = options.port ?? Number.parseInt(process.env.PORT ?? "4301", 10);
   await app.listen({ host, port });
 
   const address = app.server.address();

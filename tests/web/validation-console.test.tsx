@@ -13,9 +13,10 @@ describe("validation console", () => {
     fireEvent.click(screen.getByRole("button", { name: "开始演示" }));
 
     await waitFor(() => {
-      expect(screen.getByText("Demand")).toBeTruthy();
-      expect(screen.getByText("Decision")).toBeTruthy();
-      expect(screen.getByText("Demo")).toBeTruthy();
+      expect(screen.getByText("需求触发")).toBeTruthy();
+      expect(screen.getByText("策略判断")).toBeTruthy();
+      expect(screen.getByText("当前路径")).toBeTruthy();
+      expect(screen.getByRole("button", { name: "演示模式" })).toBeTruthy();
     });
   });
 });

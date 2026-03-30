@@ -15,9 +15,9 @@ describe("demo runtime", () => {
       "explanation",
     ]);
     expect(result.explanationTags).toEqual([
-      "replenishment",
-      "repeat-purchase",
-      "time_saving",
+      "家庭补货",
+      "高频复购",
+      "更省时间",
     ]);
     expect(result.summary).toContain("OpenClaw");
   });

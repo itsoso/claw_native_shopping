@@ -25,8 +25,8 @@ export function ScenarioPicker({
     <section className="panel scenario-picker">
       <div className="panel__header">
         <div>
-          <p className="eyebrow">Scenario Picker</p>
-          <h2>先选一个可讲、可跑、可解释的场景。</h2>
+          <p className="eyebrow">场景切换</p>
+          <h2>先选一个你想让代理替你完成的补货场景。</h2>
         </div>
 
         <div className="mode-rail" aria-label="decision mode selector">
@@ -59,8 +59,7 @@ export function ScenarioPicker({
               onClick={() => onSelectScenario(scenario.id)}
             >
               <div className="scenario-card__top">
-                <span className="scenario-card__badge">{isActive ? "Selected" : "Preset"}</span>
-                <span className="scenario-card__id">{scenario.id}</span>
+                <span className="scenario-card__badge">{isActive ? "当前场景" : scenario.label}</span>
               </div>
 
               <h3>{scenario.title}</h3>

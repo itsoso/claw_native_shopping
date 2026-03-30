@@ -17,8 +17,8 @@ export function ExplanationPanel({ mode, summary, tags }: ExplanationPanelProps)
     <section className="panel explanation-panel">
       <div className="panel__header">
         <div>
-          <p className="eyebrow">Explanation Panel</p>
-          <h2>解释为什么这是当前模式下的默认解。</h2>
+          <p className="eyebrow">订单解释</p>
+          <h2>说明为什么这是当前模式下的默认购买方案。</h2>
         </div>
         <span className="mode-badge">{modeCopy[mode]}</span>
       </div>

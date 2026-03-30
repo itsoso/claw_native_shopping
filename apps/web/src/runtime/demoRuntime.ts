@@ -19,7 +19,7 @@ const buildStep = (
 
 const createDemoHealth = () => ({
   status: "ok" as const,
-  message: "demo runtime active",
+  message: "演示路径已激活",
 });
 
 export const runDemoScenario = async (
@@ -34,11 +34,11 @@ export const runDemoScenario = async (
     mode,
     summary: getDemoScenarioSummary(scenarioId, mode),
     steps: [
-      buildStep("demand", "Demand", scenario.steps.demand),
-      buildStep("decision", "Decision", scenario.steps.decision),
-      buildStep("cart-plan", "Cart Plan", scenario.steps.cartPlan),
-      buildStep("seller-order", "Seller Order", scenario.steps.sellerOrder),
-      buildStep("explanation", "Explanation", scenario.steps.explanation),
+      buildStep("demand", "需求触发", scenario.steps.demand),
+      buildStep("decision", "策略判断", scenario.steps.decision),
+      buildStep("cart-plan", "采购路径", scenario.steps.cartPlan),
+      buildStep("seller-order", "卖家执行", scenario.steps.sellerOrder),
+      buildStep("explanation", "决策解释", scenario.steps.explanation),
     ],
     explanationTags: scenario.explanationTags,
     health: {

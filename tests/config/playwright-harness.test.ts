@@ -7,7 +7,7 @@ import playwrightConfig, {
   WEB_E2E_API_PORT,
   WEB_E2E_SELLER_PORT,
   shouldStartWebPreview,
-} from "../../playwright.config.ts";
+} from "../../playwright.config.js";
 
 describe("playwright e2e harness", () => {
   it("only starts the web preview server when the web console spec is selected", async () => {

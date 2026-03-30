@@ -3,10 +3,13 @@ import { useRef, useState } from "react";
 import { FlowTimeline } from "./components/FlowTimeline.js";
 import { Hero } from "./components/Hero.js";
 import { ExplanationPanel } from "./components/ExplanationPanel.js";
+import { FeedbackForm } from "./components/FeedbackForm.js";
+import { InterestForm } from "./components/InterestForm.js";
 import { OpsDock } from "./components/OpsDock.js";
 import { ScenarioPicker } from "./components/ScenarioPicker.js";
 import { createLiveRuntime } from "./runtime/liveRuntime.js";
 import { runDemoScenario } from "./runtime/demoRuntime.js";
+import { createIntakeClient } from "./runtime/intakeClient.js";
 import type {
   RunViewModel,
   ScenarioId,
@@ -25,6 +28,7 @@ type RuntimeHealthState = {
 };
 
 const liveRuntime = createLiveRuntime({});
+const intakeClient = createIntakeClient({});
 
 const runtimeState = {
   runtime: DEFAULT_RUNTIME,
@@ -35,7 +39,7 @@ const runtimeState = {
 };
 
 const createFallbackHealth = (message: string): RuntimeHealthState => {
-  const healthyService = { status: "ok" as const, message: "probe complete" };
+  const healthyService = { status: "ok" as const, message: "服务连通" };
   const failedService = { status: "error" as const, message };
 
   if (message.includes("seller-sim")) {
@@ -145,7 +149,7 @@ export function App() {
           ? await liveRuntime.run(requestSnapshot.scenarioId, requestSnapshot.mode)
           : await runDemoScenario(requestSnapshot.scenarioId, requestSnapshot.mode);
 
-      if (intentIsCurrent) {
+      if (intentIsCurrent()) {
         setRunViewModel(result);
       }
     } catch (error) {
@@ -164,7 +168,7 @@ export function App() {
           runtime: "demo",
         };
         setRuntimeHealthOverride(createFallbackHealth(errorMessage));
-        setRuntimeFailureMessage("服务不可用，已切回 Demo。");
+        setRuntimeFailureMessage("服务不可用，已切回演示模式。");
       } else {
         setRuntimeFailureMessage(errorMessage);
       }
@@ -205,26 +209,38 @@ export function App() {
       </section>
 
       {runViewModel ? (
-        <section className="content-grid">
-          <FlowTimeline steps={runViewModel.steps} />
-          <ExplanationPanel
-            mode={selectedMode}
-            summary={activeSummary}
-            tags={activeTags}
-          />
-        </section>
+        <>
+          <section className="content-grid">
+            <FlowTimeline steps={runViewModel.steps} />
+            <ExplanationPanel
+              mode={selectedMode}
+              summary={activeSummary}
+              tags={activeTags}
+            />
+          </section>
+
+          <section className="intake-grid">
+            <FeedbackForm
+              scenarioId={selectedScenarioId}
+              onSubmit={(payload) => intakeClient.submitFeedback(payload)}
+            />
+            <InterestForm
+              onSubmit={(payload) => intakeClient.submitInterest(payload)}
+            />
+          </section>
+        </>
       ) : (
         <section className="empty-run panel" role="status" aria-live="polite">
           <p className="empty-run__eyebrow">
-            {runtimeFailureMessage ? "Runtime fallback" : "Demo path"}
+            {runtimeFailureMessage ? "联调回退" : "默认演示"}
           </p>
           <h2>
             {runtimeFailureMessage ?? "先选择一个场景，再点击开始演示。"}
           </h2>
           <p>
             {runtimeFailureMessage
-              ? "当前页面已回到 Demo 模式，你可以继续演示、切换场景，或稍后再尝试 Live。"
-              : "当前页面会保持在展示和控制之间的平衡：上方讲清产品，下方在运行后显示可验证的决策链。"}
+              ? "当前页面已回到演示模式，你可以继续体验默认流程，或稍后再试联调路径。"
+              : "当前页面会先讲清代理为什么值得信任，然后在运行后展示一条可以回看的决策链。"}
           </p>
         </section>
       )}

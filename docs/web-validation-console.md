@@ -1,108 +1,131 @@
-# OpenClaw Web Validation Console
+# OpenClaw Web 发布版说明
 
-## Purpose
+## 产品定位
 
-The Web Validation Console is the single-page showroom for the OpenClaw shopping copilot. It is designed for two jobs at once:
+OpenClaw Web 发布版是一个面向中文用户的 Agent Native 补货体验。默认故事是 `家庭补货`，次级故事是 `办公室 / 小门店采购`。
 
-- give 投资人 and partners a fast explanation of what OpenClaw does
-- let operators switch from a stable Demo path to a local Live path without leaving the page
+页面不是调试台，也不是投资人控制台。它应该让第一次打开的人完成三件事：
 
-The page is a React + Vite app in `apps/web`. It presents the product story, scenario picker, flow timeline, explanation panel, and runtime health in one screen.
+1. 看懂 OpenClaw 在做什么
+2. 跑完一次完整演示
+3. 提交反馈或留下邮箱
 
-## Start The Console
+## 你会在页面里看到什么
 
-Install dependencies once:
+首页主要分成四块：
+
+- Hero：解释 OpenClaw 不是搜索和推荐，而是补货决策代理
+- 场景区：家庭补货默认，办公室采购为辅
+- 决策时间线：需求触发、策略判断、采购路径、卖家执行、决策解释
+- 转化区：反馈表单和候补邮箱
+
+## 启动方式
+
+安装依赖：
 
 ```bash
 pnpm install
 ```
 
-Run the console:
+稳定发布模式：
 
 ```bash
-pnpm dev:web
+pnpm start:release
 ```
 
-The Vite server prints the local URL in the terminal. Open that URL in a browser and keep the page on screen during the walkthrough. `pnpm preview:web` exposes the same UI and the same local Live path.
-
-## Runtime Modes
-
-### Demo
-
-`Demo` is the default mode and should be the first stop for any investor presentation.
-
-- it uses the three preset scenarios bundled in `apps/web/src/scenarios/index.ts`
-- it does not depend on local backend services
-- it always renders a complete five-step flow after you click `开始演示`
-
-Use Demo when you need a stable story:
-
-1. Keep the runtime toggle on `Demo`.
-2. Pick a scenario such as `补货日常洗衣液`.
-3. Click `开始演示`.
-4. Walk through `Demand`, `Decision`, `Cart Plan`, `Seller Order`, and `Explanation`.
-5. Call out the runtime state and the explanation tags on the right-hand side.
-
-### Live
-
-`Live` keeps the same UI and is browser-runnable in local Vite `dev` and `preview`.
-
-Start the services in separate terminals:
+开发模式：
 
 ```bash
-pnpm dev:api
-pnpm dev:seller-sim
+pnpm dev:release
 ```
 
-The page uses a built-in same-origin proxy and expects these default local endpoints behind it:
+页面默认地址：
 
-- buyer API: `http://127.0.0.1:3000/health`
-- seller simulator: `http://127.0.0.1:3100/health`
+- [http://localhost:4174](http://localhost:4174)
 
-If those ports are not suitable in your environment, override the proxy targets before starting the web app:
+如果你的 `4300 / 4301 / 4174` 已经被占用，可以覆盖默认端口：
 
 ```bash
-OPENCLAW_LIVE_API_TARGET=http://127.0.0.1:4300 \
-OPENCLAW_LIVE_SELLER_TARGET=http://127.0.0.1:4301 \
-pnpm dev:web
+OPENCLAW_RELEASE_WEB_PORT=4274 \
+OPENCLAW_RELEASE_API_PORT=4400 \
+OPENCLAW_RELEASE_SELLER_PORT=4401 \
+pnpm start:release
 ```
 
-When you switch to `Live`, the health cards stay `Unknown` until you click `开始演示`. That click now sends the selected scenario and mode into the real buyer API request and begins the live sequence:
+## 运行模式
 
-1. probes `/health` on both services
-2. posts to `POST /intents/replenish` with the chosen `scenarioId` and `mode`
-3. asks seller-sim for multiple quote options, ranks them inside the buyer API path, and selects the best one
-4. reads `GET /orders/:id/explanation`
-5. maps the live responses back into the same timeline UI
+### 演示模式
 
-Today the live request path is still a fixed local replenishment flow, but the selected scenario and mode now affect the backend request profile as well as the surrounding UI framing. The buyer API also ranks multiple seller-sim quote options before hold and commit, so the Live timeline now validates real offer evaluation instead of a single hard-coded quote. 换句话说，当前选择已经进入 Live 请求本身，而不只是页面上的演示文案。如果任一服务不可用，页面会自动回退到 `Demo`，而不是留在空白或错误状态。
+这是默认路径，也是最重要的产品路径。
 
-Current implementation limits:
+- 不依赖本地服务健康状态
+- 打开页面后可以直接开始演示
+- 适合给潜在用户、合作方或朋友分享
 
-- seller-sim now participates in the real replenishment path for quote collection, ranking, hold, and commit
-- the Live path now validates multi-offer selection inside seller-sim, but it is still not a dynamic multi-seller marketplace across external services
-- the chosen scenario and mode now change the request profile, but they do not yet introduce a fully dynamic marketplace search
+推荐的演示顺序：
 
-## Investor Walkthrough
+1. 保持在 `演示模式`
+2. 用默认的家庭补货场景
+3. 点击 `开始演示`
+4. 展示时间线和订单解释
+5. 提交一条反馈或留下邮箱
 
-For a short 投资人 demo, use this order:
+### 联调模式
 
-1. Open the page in `Demo`.
-2. State the product in one line: OpenClaw is not a recommendation widget, it is a消费决策代理.
-3. Click `开始演示` and narrate the five-step timeline from left to right.
-4. Point at the `Runtime State` block to show that the system can switch between Demo and Live.
-5. Switch to `Live`, click `开始演示`, and explain that the page is now using the local buyer API and seller-sim through Vite's same-origin proxy.
-6. Explain that Live now validates a real buyer API to seller-sim replenishment path, including seller quote collection, offer ranking, hold, and commit.
-7. Explain that the chosen scenario and mode now change the request profile sent to the buyer API, while the overall path is still fixed and local.
-8. If your local backend targets differ from the defaults, restart the web app with `OPENCLAW_LIVE_API_TARGET` and `OPENCLAW_LIVE_SELLER_TARGET` so the same browser walkthrough still works.
+联调模式用来证明页面背后是真实调用本地 buyer API 和 seller runtime，而不是纯前端假数据。
 
-## Validation Commands
+联调模式下页面会：
 
-Use these commands before sharing the console:
+1. 调 `GET /health`
+2. 调 `POST /intents/replenish`
+3. 读取 `GET /orders/:id/explanation`
+4. 把返回结果映射回同一套 UI
+
+如果本地服务异常，页面会自动回退到 `演示模式`，而不是卡死在错误态。
+
+## 本地反馈与留资
+
+发布版内置两个真实表单：
+
+- `POST /intake/feedback`
+- `POST /intake/interest`
+
+默认落盘目录：
+
+- `.local/release-intake`
+
+输出文件：
+
+- `feedback.jsonl`
+- `interest.jsonl`
+
+## 推荐验证命令
+
+发布版核心验证：
 
 ```bash
-pnpm test
-pnpm test:e2e
+pnpm verify:release
 ```
 
-`pnpm test` includes the doc guards and web runtime unit tests. `pnpm test:e2e` runs the Playwright suite, including the browser smoke test for the web console in both `Demo` and `Live`. The Live browser test now starts isolated buyer API and seller-sim ports and injects them into the web proxy so the check does not depend on whatever may already be running on `3000` or `3100`.
+浏览器发布流验证：
+
+```bash
+pnpm test:e2e:release
+```
+
+生产构建验证：
+
+```bash
+pnpm build:web
+```
+
+## 当前限制
+
+这版发布仍然有清晰边界：
+
+- 不是线上商城
+- 不做真实支付
+- 不做真实商品发布网络
+- 不做浏览器插件首发
+
+但它已经是一个完整、可运行、可测试、可分享的本地产品。

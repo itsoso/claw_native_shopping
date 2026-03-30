@@ -9,6 +9,7 @@ export type ScenarioMode = "time_saving" | "safe" | "value";
 
 export type ScenarioDefinition = {
   id: ScenarioId;
+  label: string;
   title: string;
   summary: string;
   tags: readonly string[];

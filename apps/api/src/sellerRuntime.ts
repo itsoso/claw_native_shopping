@@ -3,7 +3,7 @@ import { createSellerHttpQuoteCollector } from "../../../packages/seller-protoco
 import type { SellerQuoteCollector } from "../../../packages/orchestrator/src/service.js";
 import type { SellerProtocolPort } from "../../../packages/seller-protocol/src/port.js";
 
-export const DEFAULT_SELLER_SIM_BASE_URL = "http://127.0.0.1:3100";
+export const DEFAULT_SELLER_SIM_BASE_URL = "http://127.0.0.1:4301";
 
 export type SellerRuntimeOptions = {
   sellerBaseUrl?: string;
@@ -41,6 +41,6 @@ export const resolveSellerRuntime = (
   return {
     sellerBaseUrl,
     sellerPort,
-    quoteCollector,
+    ...(quoteCollector ? { quoteCollector } : {}),
   };
 };

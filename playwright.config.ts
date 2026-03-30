@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 import {
   LIVE_API_TARGET_ENV,
   LIVE_SELLER_TARGET_ENV,
-} from "./apps/web/vite.config.ts";
+} from "./apps/web/vite.config.js";
 
 const FIXTURE_PORT = 4173;
 const WEB_PORT = 4274;
