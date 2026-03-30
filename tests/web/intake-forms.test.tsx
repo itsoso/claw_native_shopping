@@ -14,7 +14,19 @@ describe("release intake forms", () => {
   it("submits feedback and interest after a demo run completes", async () => {
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
-      .mockResolvedValue({ ok: true, json: async () => ({ accepted: true }) } as Response);
+      .mockImplementation(async (input) => {
+        if (typeof input === "string" && input.endsWith("/intake/summary")) {
+          return new Response(
+            JSON.stringify({
+              feedbackCount: 0,
+              interestCount: 0,
+              recentFeedback: [],
+            }),
+          );
+        }
+
+        return new Response(JSON.stringify({ accepted: true }));
+      });
 
     render(<App />);
 
@@ -52,7 +64,19 @@ describe("release intake forms", () => {
   it("shows server-side failures without pretending the input is invalid", async () => {
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
-      .mockRejectedValue(new Error("network down"));
+      .mockImplementation(async (input) => {
+        if (typeof input === "string" && input.endsWith("/intake/summary")) {
+          return new Response(
+            JSON.stringify({
+              feedbackCount: 0,
+              interestCount: 0,
+              recentFeedback: [],
+            }),
+          );
+        }
+
+        throw new Error("network down");
+      });
 
     render(<App />);
 

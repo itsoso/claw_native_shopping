@@ -2,9 +2,10 @@ import { useState } from "react";
 
 type InterestFormProps = {
   onSubmit: (payload: { email: string }) => Promise<void>;
+  onSubmitted?: () => void;
 };
 
-export function InterestForm({ onSubmit }: InterestFormProps) {
+export function InterestForm({ onSubmit, onSubmitted }: InterestFormProps) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -26,6 +27,7 @@ export function InterestForm({ onSubmit }: InterestFormProps) {
     try {
       await onSubmit({ email: normalizedEmail });
       setStatus("success");
+      onSubmitted?.();
     } catch {
       setStatus("idle");
       setErrorMessage("候补提交失败，请稍后再试");

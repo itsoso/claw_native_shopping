@@ -267,6 +267,16 @@ button:disabled {
   margin-top: 20px;
 }
 
+.intake-stack {
+  display: grid;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.intake-stack .intake-grid {
+  margin-top: 0;
+}
+
 .intake-panel {
   padding: 24px;
 }
@@ -549,6 +559,13 @@ button:disabled {
   border: 1px solid rgba(201, 123, 43, 0.18);
 }
 
+.outcome-panel__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
 .explanation-panel__tags {
   display: flex;
   flex-wrap: wrap;
@@ -633,6 +650,10 @@ button:disabled {
   }
 
   .scenario-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .outcome-panel__facts {
     grid-template-columns: 1fr;
   }
 

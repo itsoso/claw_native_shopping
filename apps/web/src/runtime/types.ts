@@ -18,6 +18,10 @@ export type ScenarioOutcomeDefinition = {
   decisionLabel: string;
   detail: string;
   note?: string;
+  sellerLabel: string;
+  priceLabel: string;
+  etaLabel: string;
+  comparisonLabel: string;
 };
 
 export type ScenarioDefinition = {

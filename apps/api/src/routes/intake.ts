@@ -18,6 +18,11 @@ export const registerIntakeRoutes = (
   app: FastifyInstance,
   store: IntakeStore,
 ): void => {
+  app.get("/intake/summary", async (_request, reply) => {
+    const summary = await store.readSummary();
+    return reply.status(200).send(summary);
+  });
+
   app.post("/intake/feedback", async (request, reply) => {
     const payload = FeedbackPayloadSchema.safeParse(request.body);
     if (!payload.success) {

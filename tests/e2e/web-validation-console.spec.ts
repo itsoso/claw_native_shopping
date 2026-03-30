@@ -18,7 +18,11 @@ test("runs the default demo scenario in the web validation console", async ({
   await expect(page.getByRole("heading", { name: "本次代理会这样买" })).toBeVisible();
   await expect(page.getByText("散养鸡蛋 12 枚")).toBeVisible();
   await expect(page.getByText("无需人工审批")).toBeVisible();
+  await expect(page.getByText("晨光农场直营网")).toBeVisible();
+  await expect(page.getByText("30 元")).toBeVisible();
+  await expect(page.getByText("明早 09:00 前送达")).toBeVisible();
   await expect(page.getByText("演示路径已激活", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "最近的反馈信号" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "留下反馈" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "加入候补" })).toBeVisible();
 });
@@ -50,5 +54,6 @@ test("runs the live scenario in the web validation console", async ({ page }) =>
   await expect(page.getByText(/预算上限为 45/i)).toBeVisible();
   await expect(page.getByRole("heading", { name: "本次代理会这样买" })).toBeVisible();
   await expect(page.getByText("冷链鲜牛奶 950ml")).toBeVisible();
+  await expect(page.getByText("优先履约卖家")).toBeVisible();
   await expect(page.getByText("服务不可用，已切回演示模式。")).toHaveCount(0);
 });

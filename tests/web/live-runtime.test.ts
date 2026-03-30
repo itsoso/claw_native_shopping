@@ -81,6 +81,8 @@ describe("live runtime", () => {
               budgetLimit: 55,
               deliveryWindowLatestAt: "2026-03-24T12:00:00+08:00",
               sellerAgentId: "seller_1",
+              totalAmount: 26,
+              deliveryEta: "2026-03-24T12:00:00+08:00",
               rankedOfferCount: 2,
               selectedOfferScore: 0.913,
             },
@@ -121,6 +123,10 @@ describe("live runtime", () => {
       "审计事件链",
     );
     expect(result.steps.some((step) => step.id === "explanation")).toBe(true);
+    expect(result.outcome.sellerLabel).toBe("优先履约卖家");
+    expect(result.outcome.priceLabel).toBe("26 元");
+    expect(result.outcome.etaLabel).toBe("2026-03-24 12:00 前送达");
+    expect(result.outcome.comparisonLabel).toBe("已比较 2 个卖家报价");
   });
 
   it("fails cleanly on a non-ok health probe", async () => {

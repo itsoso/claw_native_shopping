@@ -7,9 +7,10 @@ type FeedbackFormProps = {
     rating: number;
     message: string;
   }) => Promise<void>;
+  onSubmitted?: () => void;
 };
 
-export function FeedbackForm({ scenarioId, onSubmit }: FeedbackFormProps) {
+export function FeedbackForm({ scenarioId, onSubmit, onSubmitted }: FeedbackFormProps) {
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -29,6 +30,7 @@ export function FeedbackForm({ scenarioId, onSubmit }: FeedbackFormProps) {
         message: message.trim(),
       });
       setStatus("success");
+      onSubmitted?.();
     } catch {
       setStatus("idle");
       setErrorMessage("反馈提交失败，请稍后再试");

@@ -36,9 +36,12 @@ type LiveExplanationResponse = {
     requestedQuantity?: number;
     budgetLimit?: number;
     deliveryWindowLatestAt?: string;
+    deliveryEta?: string;
     sellerAgentId?: string;
     rankedOfferCount?: number;
     selectedOfferScore?: number;
+    totalAmount?: number;
+    policyDecision?: string;
   };
 };
 
@@ -53,6 +56,11 @@ const categoryLabelMap: Record<string, string> = {
   "laundry-detergent": "家庭鸡蛋补货",
   "cart-threshold-booster": "办公室咖啡豆补货",
   "seller-eta-balance": "冷链牛奶补货",
+};
+const sellerLabelMap: Record<string, string> = {
+  seller_1: "优先履约卖家",
+  seller_2: "低价候选卖家",
+  seller_3: "阈值补货卖家",
 };
 
 const createStep = (
@@ -111,6 +119,43 @@ const extractExplanationTags = (response: LiveExplanationResponse): readonly str
 
 const formatCategoryLabel = (category: string): string => {
   return categoryLabelMap[category] ?? category;
+};
+
+const formatCurrencyLabel = (value?: number): string | undefined => {
+  if (typeof value !== "number") {
+    return undefined;
+  }
+
+  return `${value} 元`;
+};
+
+const formatDeliveryEtaLabel = (value?: string): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  const formatter = new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(date);
+  const valueMap = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
+  );
+
+  return `${valueMap.year}-${valueMap.month}-${valueMap.day} ${valueMap.hour}:${valueMap.minute} 前送达`;
 };
 
 const buildLiveSteps = (
@@ -222,6 +267,8 @@ export const createLiveRuntime = (options: LiveRuntimeOptions): LiveRuntime => {
 
       const scenario = getDemoScenarioFixture(scenarioId);
       const explanationEvents = extractExplanationTags(explanation);
+      const liveOutcome = getDemoScenarioOutcome(scenarioId, mode);
+      const rankedOfferCount = explanation.snapshot?.rankedOfferCount;
 
       return {
         scenarioId,
@@ -236,7 +283,23 @@ export const createLiveRuntime = (options: LiveRuntimeOptions): LiveRuntime => {
           explanationEvents,
         ),
         explanationTags: scenario.explanationTags,
-        outcome: getDemoScenarioOutcome(scenarioId, mode),
+        outcome: {
+          ...liveOutcome,
+          sellerLabel:
+            sellerLabelMap[explanation.snapshot?.sellerAgentId ?? ""] ?? liveOutcome.sellerLabel,
+          priceLabel:
+            formatCurrencyLabel(explanation.snapshot?.totalAmount) ?? liveOutcome.priceLabel,
+          etaLabel:
+            formatDeliveryEtaLabel(explanation.snapshot?.deliveryEta) ?? liveOutcome.etaLabel,
+          comparisonLabel:
+            typeof rankedOfferCount === "number" && rankedOfferCount > 1
+              ? `已比较 ${rankedOfferCount} 个卖家报价`
+              : liveOutcome.comparisonLabel,
+          decisionLabel:
+            explanation.snapshot?.policyDecision === "approval_required"
+              ? "需要人工审批"
+              : liveOutcome.decisionLabel,
+        },
         health: {
           api: apiHealth,
           seller: sellerHealth,

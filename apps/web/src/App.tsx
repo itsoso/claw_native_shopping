@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { ContextPanel } from "./components/ContextPanel.js";
 import { FlowTimeline } from "./components/FlowTimeline.js";
@@ -6,6 +6,7 @@ import { Hero } from "./components/Hero.js";
 import { ExplanationPanel } from "./components/ExplanationPanel.js";
 import { FeedbackForm } from "./components/FeedbackForm.js";
 import { InterestForm } from "./components/InterestForm.js";
+import { IntakeSummaryPanel } from "./components/IntakeSummaryPanel.js";
 import { OutcomePanel } from "./components/OutcomePanel.js";
 import { OpsDock } from "./components/OpsDock.js";
 import { ScenarioPicker } from "./components/ScenarioPicker.js";
@@ -84,6 +85,7 @@ export function App() {
   const [runViewModel, setRunViewModel] = useState<RunViewModel | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [opsDockOpen, setOpsDockOpen] = useState(false);
+  const [intakeSummaryRefreshKey, setIntakeSummaryRefreshKey] = useState(0);
   const [runtimeHealthOverride, setRuntimeHealthOverride] =
     useState<RuntimeHealthState | null>(null);
   const [runtimeFailureMessage, setRuntimeFailureMessage] = useState<string | null>(null);
@@ -138,6 +140,12 @@ export function App() {
     setRuntimeHealthOverride(null);
     setRuntimeFailureMessage(null);
   };
+
+  const handleIntakeSubmitted = (): void => {
+    setIntakeSummaryRefreshKey((value) => value + 1);
+  };
+
+  const loadIntakeSummary = useCallback(() => intakeClient.getSummary(), []);
 
   const handleRun = async (): Promise<void> => {
     const requestId = ++runRequestIdRef.current;
@@ -261,14 +269,22 @@ export function App() {
             </div>
           </section>
 
-          <section className="intake-grid">
-            <FeedbackForm
-              scenarioId={selectedScenarioId}
-              onSubmit={(payload) => intakeClient.submitFeedback(payload)}
+          <section className="intake-stack">
+            <IntakeSummaryPanel
+              loadSummary={loadIntakeSummary}
+              refreshKey={intakeSummaryRefreshKey}
             />
-            <InterestForm
-              onSubmit={(payload) => intakeClient.submitInterest(payload)}
-            />
+            <section className="intake-grid">
+              <FeedbackForm
+                scenarioId={selectedScenarioId}
+                onSubmit={(payload) => intakeClient.submitFeedback(payload)}
+                onSubmitted={handleIntakeSubmitted}
+              />
+              <InterestForm
+                onSubmit={(payload) => intakeClient.submitInterest(payload)}
+                onSubmitted={handleIntakeSubmitted}
+              />
+            </section>
           </section>
         </>
       ) : (

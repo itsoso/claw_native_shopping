@@ -28,6 +28,24 @@ export function OutcomePanel({ mode, outcome }: OutcomePanelProps) {
       </div>
 
       <p className="explanation-panel__summary">{outcome.detail}</p>
+      <div className="outcome-panel__facts">
+        <article className="context-card">
+          <span className="context-card__label">选择卖家</span>
+          <strong>{outcome.sellerLabel}</strong>
+        </article>
+        <article className="context-card">
+          <span className="context-card__label">预计总价</span>
+          <strong>{outcome.priceLabel}</strong>
+        </article>
+        <article className="context-card">
+          <span className="context-card__label">履约承诺</span>
+          <strong>{outcome.etaLabel}</strong>
+        </article>
+        <article className="context-card">
+          <span className="context-card__label">比选结果</span>
+          <strong>{outcome.comparisonLabel}</strong>
+        </article>
+      </div>
       {outcome.note ? <p className="outcome-panel__note">{outcome.note}</p> : null}
     </section>
   );

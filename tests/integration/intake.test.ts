@@ -63,4 +63,50 @@ describe("release intake api", () => {
       await app.close();
     }
   });
+
+  it("returns a lightweight intake summary for the release web surface", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "openclaw-intake-"));
+    const app = buildServer({ intakeDataDir: dataDir });
+
+    try {
+      await app.inject({
+        method: "POST",
+        url: "/intake/feedback",
+        payload: {
+          scenarioId: "replenish-laundry",
+          rating: 4,
+          message: "希望看到更真实的商品和卖家信息。",
+        },
+      });
+      await app.inject({
+        method: "POST",
+        url: "/intake/interest",
+        payload: {
+          email: "tester@example.com",
+          source: "release-web",
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/intake/summary",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual(
+        expect.objectContaining({
+          feedbackCount: 1,
+          interestCount: 1,
+          recentFeedback: [
+            expect.objectContaining({
+              scenarioId: "replenish-laundry",
+              message: "希望看到更真实的商品和卖家信息。",
+            }),
+          ],
+        }),
+      );
+    } finally {
+      await app.close();
+    }
+  });
 });

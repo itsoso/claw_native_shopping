@@ -18,6 +18,9 @@ describe("validation console", () => {
       expect(screen.getByRole("heading", { name: "本次代理会这样买" })).toBeTruthy();
       expect(screen.getByText("散养鸡蛋 12 枚")).toBeTruthy();
       expect(screen.getByText("无需人工审批")).toBeTruthy();
+      expect(screen.getByText("晨光农场直营网")).toBeTruthy();
+      expect(screen.getByText("30 元")).toBeTruthy();
+      expect(screen.getByText("明早 09:00 前送达")).toBeTruthy();
     });
   });
 });
