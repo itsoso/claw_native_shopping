@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import "./styles.css";
 
 import { Hero } from "./components/Hero.js";
@@ -8,7 +8,15 @@ import { ExplanationPanel } from "./components/ExplanationPanel.js";
 import { OpsDock } from "./components/OpsDock.js";
 import { demoScenarios } from "./scenarios/index.js";
 import { runDemoScenario } from "./runtime/demoRuntime.js";
+import { createLiveRuntime } from "./runtime/liveRuntime.js";
 import type { RunViewModel, ValidationRuntime } from "./runtime/types.js";
+
+const DEFAULT_API_BASE =
+  (typeof import.meta !== "undefined" && (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE_URL) ||
+  "http://127.0.0.1:3000";
+const DEFAULT_SELLER_BASE =
+  (typeof import.meta !== "undefined" && (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_SELLER_BASE_URL) ||
+  "http://127.0.0.1:3100";
 
 export function App(): React.ReactElement {
   const [runtime, setRuntime] = useState<ValidationRuntime>("demo");
@@ -24,18 +32,38 @@ export function App(): React.ReactElement {
   const selectedScenario =
     demoScenarios.find((s) => s.id === scenarioId) ?? defaultScenario;
 
+  const liveRuntime = useMemo(
+    () => createLiveRuntime({ apiBaseUrl: DEFAULT_API_BASE, sellerBaseUrl: DEFAULT_SELLER_BASE }),
+    [],
+  );
+
   async function handleStart(): Promise<void> {
     setLoading(true);
     setError(null);
     try {
-      const result = await runDemoScenario(scenarioId, selectedScenario.preferredMode);
+      const result = runtime === "demo"
+        ? await runDemoScenario(scenarioId, selectedScenario.preferredMode)
+        : await liveRuntime.run(scenarioId, selectedScenario.preferredMode);
       setRun(result);
+      // Live 模式下, 任一服务不可用 → 暴露为顶层 error, Ops Dock 展示 "服务不可用" 区块.
+      const apiBad = result.health.api.status !== "ok";
+      const sellerBad = result.health.seller.status !== "ok";
+      if (result.runtime === "live" && (apiBad || sellerBad)) {
+        setError(result.summary);
+      }
     } catch (e) {
+      // 即使 Live 崩溃, Demo 仍然可用 — 不清空现有 run.
       setError(e instanceof Error ? e.message : "unknown error");
-      setRun(null);
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleChangeRuntime(next: ValidationRuntime): void {
+    setRuntime(next);
+    // 切换运行时, 清空错误与旧结果以避免混淆.
+    setError(null);
+    setRun(null);
   }
 
   return (
@@ -53,7 +81,7 @@ export function App(): React.ReactElement {
       </div>
       <OpsDock
         runtime={runtime}
-        onChangeRuntime={setRuntime}
+        onChangeRuntime={handleChangeRuntime}
         run={run}
         error={error}
       />
