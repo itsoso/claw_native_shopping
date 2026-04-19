@@ -24,6 +24,31 @@ For iterative extension work, run:
 pnpm dev
 ```
 
+## OpenClaw Web Validation Console
+
+独立单页 Web 演示台，用于向外部观众证明「OpenClaw 不是帮用户浏览，而是代用户完成」。
+
+```bash
+pnpm dev:web            # Vite dev 模式，http://127.0.0.1:5173
+pnpm build:web          # 产出 apps/web/dist/
+pnpm preview:web        # 本地预览构建产物，http://127.0.0.1:4174
+```
+
+两种运行时：
+
+- **Demo** — 确定性场景固件，零外部依赖，投资人级别可靠
+- **Live** — 本地 `pnpm dev:api` + `pnpm dev:seller-sim`，走真实 `/intents/replenish` 与 `/orders/:id/explanation`，并通过 `/health` 展示服务状态
+
+详见 [docs/web-validation-console.md](./docs/web-validation-console.md)。
+
+## Collaboration
+
+This repository has a documented default working agreement for product collaboration:
+
+- [Technical Co-Founder Operating Model](./docs/technical-cofounder-operating-model.md)
+
+Use that document as the repository-level rule for how product discovery, planning, implementation, polish, and handoff should be handled.
+
 ## Load In Chrome
 
 1. Run `pnpm build` or keep `pnpm dev` running.
