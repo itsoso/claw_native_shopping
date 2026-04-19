@@ -14,6 +14,9 @@ export const registerSellerSimHandlers = (app: FastifyInstance): void => {
   const quotes = new Map<string, { rfqId: string; sellerAgentId: string }>();
   const holds = new Map<string, { quoteId: string; rfqId: string; sellerAgentId: string }>();
 
+  // Health probe for the Web validation console Ops Dock.
+  app.get("/health", async () => ({ status: "ok" as const, service: "seller-sim" as const }));
+
   app.post("/rfq", async (request, reply) => {
     const rfq = RFQSchema.parse(request.body);
     const item = sellerCatalog.find((entry) => entry.category === rfq.category);
