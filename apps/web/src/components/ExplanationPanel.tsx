@@ -9,7 +9,7 @@ export function ExplanationPanel({ run }: ExplanationPanelProps): React.ReactEle
   if (!run) return null;
   return (
     <section className="explanation-panel">
-      <h2>Explanation</h2>
+      <h2>决策解释</h2>
       <p>{run.summary}</p>
       <ul className="tags">
         {run.explanationTags.map((tag) => (

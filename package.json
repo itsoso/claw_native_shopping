@@ -8,7 +8,7 @@
     "dev": "pnpm --filter @claw/browser-extension dev",
     "build": "pnpm --filter @claw/browser-extension build",
     "test": "vitest run",
-    "test:e2e": "playwright test tests/e2e/product-page.spec.ts tests/e2e/cart-page.spec.ts tests/e2e/extension-runtime.spec.ts",
+    "test:e2e": "playwright test tests/e2e/product-page.spec.ts tests/e2e/cart-page.spec.ts tests/e2e/extension-runtime.spec.ts tests/e2e/web-validation-console.spec.ts",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.base.json --noEmit",
     "verify": "bash scripts/verify.sh",
