@@ -15,7 +15,10 @@
     "dev:api": "tsx apps/api/src/server.ts",
     "dev:seller-sim": "tsx apps/seller-sim/src/server.ts",
     "start:api": "tsx apps/api/src/server.ts",
-    "start:seller-sim": "tsx apps/seller-sim/src/server.ts"
+    "start:seller-sim": "tsx apps/seller-sim/src/server.ts",
+    "dev:web": "pnpm --filter @claw/web dev",
+    "build:web": "pnpm --filter @claw/web build",
+    "preview:web": "pnpm --filter @claw/web preview"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
