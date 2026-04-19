@@ -12,5 +12,13 @@
     "resolveJsonModule": true,
     "types": ["node", "vitest/globals"]
   },
-  "exclude": ["node_modules", "dist", "coverage"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "apps/web",
+    "tests/web",
+    "tests/config/web-docs.test.ts",
+    ".worktrees"
+  ]
 }

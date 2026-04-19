@@ -3,7 +3,10 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "types": ["vite/client"]
+    "types": ["node", "vite/client", "vitest/globals"],
+    "moduleResolution": "Bundler",
+    "module": "ESNext"
   },
-  "include": ["src", "../../tests/web"]
+  "include": ["src", "../../tests/web"],
+  "exclude": []
 }
