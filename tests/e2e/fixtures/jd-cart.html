@@ -1,43 +1,27 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <title>JD 购物车</title>
-  </head>
-  <body>
-    <main>
-      <section data-cart-item>
-        <h2 class="item-title">
-          <span class="brand">立白</span>
-          <strong class="name">洗衣液 2kg</strong>
-        </h2>
-        <div class="meta">
-          <span class="item-price" data-unit-price="29.90">￥29.90</span>
-          <span class="quantity" data-quantity="1">1</span>
-          <span class="seller" data-seller-type="marketplace">商家发货</span>
-          <span class="package-label">2kg</span>
-        </div>
-      </section>
-      <section data-cart-item>
-        <h2 class="item-title">
-          <span>抽纸</span>
-        </h2>
-        <div class="meta">
-          <span class="item-price" data-unit-price="12">￥12</span>
-          <span class="quantity" data-quantity="1">1</span>
-          <span class="seller" data-seller-type="self_operated">京东自营</span>
-          <span class="package-label">3包</span>
-        </div>
-      </section>
-      <aside
-        class="promotion"
-        data-threshold-rule
-        data-threshold="59"
-        data-discount="10"
-      >
-        <span class="threshold">满 59</span>
-        <span class="discount">减 10</span>
-      </aside>
-    </main>
-  </body>
+<head><meta charset="UTF-8"/><title>JD 购物车</title></head>
+<body>
+  <div id="cart-body" class="cart-main">
+    <div class="shop-wrap">
+      <div class="shop-info"><span class="shop-name">商家店铺</span></div>
+      <div class="item-form">
+        <div class="p-name"><a>立白 洗衣液 2kg</a></div>
+        <div class="p-price"><strong>29.90</strong></div>
+        <div class="quantity-form"><input value="1" /></div>
+      </div>
+    </div>
+    <div class="shop-wrap">
+      <div class="shop-info"><span class="u-jd">京东自营</span></div>
+      <div class="item-form">
+        <div class="p-name"><a>抽纸 3包</a></div>
+        <div class="p-price"><strong>12.00</strong></div>
+        <div class="quantity-form"><input value="1" /></div>
+      </div>
+      <div class="prom-main">
+        <span>满59减10</span>
+      </div>
+    </div>
+  </div>
+</body>
 </html>
