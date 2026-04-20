@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { PRODUCT_SELECTORS } from "../config/selectors.js";
 import type {
   AsyncParseResult,
 } from "../parsers/asyncProductParser.js";
@@ -19,6 +20,7 @@ import type { VerificationBadgeInfo } from "../types/verification.js";
 import { DecisionCard } from "../ui/DecisionCard.js";
 import type { DecisionCardAction } from "../ui/DecisionCard.js";
 import { ParserStatusCard } from "../ui/ParserStatusCard.js";
+import { highlightAndScroll } from "./highlight.js";
 
 const FALLBACK_DECISION_MODE: DecisionMode = "time_saving";
 
@@ -152,6 +154,12 @@ export function ProductPagePanel() {
 
   const handleApply = () => {
     recordProductEvent("recommendation_applied", mode);
+    highlightAndScroll(
+      PRODUCT_SELECTORS.price.map((s) => ({ selector: s })).concat(
+        PRODUCT_SELECTORS.delivery.map((s) => ({ selector: s })),
+        PRODUCT_SELECTORS.selfBadge.map((s) => ({ selector: s })),
+      ),
+    );
   };
 
   const handleReasonView = () => {
