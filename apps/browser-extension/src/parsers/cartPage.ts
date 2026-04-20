@@ -1,9 +1,15 @@
+import {
+  CART_SELECTORS,
+  detectSellerType,
+  parseNumber,
+  queryFirst,
+  textOf,
+} from "../config/selectors.js";
 import type {
   CartItem,
   CartPageModel,
   CartThresholdRule,
 } from "../types/cart.js";
-import type { SellerType } from "../types/product.js";
 
 function textContentOf(
   root: ParentNode,
@@ -14,57 +20,24 @@ function textContentOf(
   return text ? text : null;
 }
 
-function parseNumber(value: string | null | undefined): number {
-  if (!value) {
-    return 0;
-  }
-
-  const normalized = value.replace(/[￥,\s]/g, "");
-  const parsed = Number.parseFloat(normalized);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function parseSellerType(root: Element): SellerType {
-  const sellerType = root.getAttribute("data-seller-type");
-
-  if (sellerType === "self_operated") {
-    return "self_operated";
-  }
-
-  const seller = root.querySelector("[data-seller-type]");
-  const nestedSellerType = seller?.getAttribute("data-seller-type");
-
-  if (nestedSellerType === "self_operated") {
-    return "self_operated";
-  }
-
-  const sellerText = seller?.textContent ?? "";
-  if (/京东自营/i.test(sellerText)) {
-    return "self_operated";
-  }
-
-  return "marketplace";
-}
-
 function parseCartItem(itemNode: Element): CartItem | null {
   const title =
-    textContentOf(itemNode, ".item-title") ??
-    textContentOf(itemNode, "[data-item-title]") ??
-    textContentOf(itemNode, "h2") ??
-    textContentOf(itemNode, "h3") ??
+    textOf(itemNode, CART_SELECTORS.itemName) ??
     "Unknown item";
 
+  const priceEl = queryFirst(itemNode, CART_SELECTORS.itemPrice);
   const unitPrice =
     parseNumber(itemNode.getAttribute("data-unit-price")) ||
     parseNumber(itemNode.querySelector("[data-unit-price]")?.getAttribute("data-unit-price")) ||
-    parseNumber(textContentOf(itemNode, ".item-price")) ||
-    parseNumber(textContentOf(itemNode, "[data-price]"));
+    parseNumber(priceEl?.textContent?.replace(/\s+/g, " ").trim());
 
   if (unitPrice <= 0) {
     return null;
   }
 
+  const quantityInput = itemNode.querySelector(".quantity-form input") as HTMLInputElement | null;
   const quantityText =
+    quantityInput?.value ??
     itemNode.getAttribute("data-quantity") ??
     itemNode.querySelector("[data-quantity]")?.getAttribute("data-quantity") ??
     textContentOf(itemNode, ".quantity");
@@ -75,13 +48,32 @@ function parseCartItem(itemNode: Element): CartItem | null {
     textContentOf(itemNode, ".package-label") ??
     textContentOf(itemNode, "[data-package-label]");
 
-  return {
-    title,
-    unitPrice,
-    quantity,
-    sellerType: parseSellerType(itemNode),
-    packageLabel,
-  };
+  const shopWrap = itemNode.closest(".shop-wrap") ?? itemNode;
+  const sellerType = detectSellerType(
+    shopWrap,
+    CART_SELECTORS.itemSelfBadge,
+    [".seller-info", "[data-seller-type]"],
+  );
+
+  return { title, unitPrice, quantity, sellerType, packageLabel };
+}
+
+const MANJIAN_REGEX = /满\s*(\d+(?:\.\d+)?)\s*减\s*(\d+(?:\.\d+)?)/;
+
+function parseThresholdRulesFromText(ruleNode: Element): CartThresholdRule[] {
+  const text = ruleNode.textContent ?? "";
+  const rules: CartThresholdRule[] = [];
+  const regex = new RegExp(MANJIAN_REGEX.source, "g");
+  let match = regex.exec(text);
+  while (match) {
+    const threshold = parseNumber(match[1]);
+    const discount = parseNumber(match[2]);
+    if (threshold > 0 && discount > 0) {
+      rules.push({ threshold, discount });
+    }
+    match = regex.exec(text);
+  }
+  return rules;
 }
 
 function parseThresholdRule(ruleNode: Element): CartThresholdRule | null {
@@ -105,13 +97,28 @@ function parseThresholdRule(ruleNode: Element): CartThresholdRule | null {
 }
 
 export function parseJdCartDocument(root: ParentNode): CartPageModel {
-  const items = Array.from(root.querySelectorAll("[data-cart-item]"))
-    .map((itemNode) => parseCartItem(itemNode))
+  const itemNodes = Array.from(
+    root.querySelectorAll(CART_SELECTORS.item.join(", ")),
+  );
+  const items = itemNodes
+    .map((node) => parseCartItem(node))
     .filter((item): item is CartItem => item !== null);
 
-  const thresholdRules = Array.from(root.querySelectorAll("[data-threshold-rule]"))
-    .map((ruleNode) => parseThresholdRule(ruleNode))
-    .filter((rule): rule is CartThresholdRule => rule !== null);
+  const ruleNodes = Array.from(
+    root.querySelectorAll(CART_SELECTORS.promotionRule.join(", ")),
+  );
+
+  const thresholdRules: CartThresholdRule[] = [];
+  for (const node of ruleNodes) {
+    if (node.getAttribute("data-threshold")) {
+      const rule = parseThresholdRule(node);
+      if (rule) {
+        thresholdRules.push(rule);
+      }
+    } else {
+      thresholdRules.push(...parseThresholdRulesFromText(node));
+    }
+  }
 
   return { items, thresholdRules };
 }

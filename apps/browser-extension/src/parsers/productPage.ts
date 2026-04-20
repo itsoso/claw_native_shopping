@@ -1,63 +1,36 @@
-import type { ProductPageModel, SellerType } from "../types/product.js";
-
-function textContentOf(document: Document, selector: string): string | null {
-  const element = document.querySelector(selector);
-  const text = element?.textContent?.replace(/\s+/g, " ").trim();
-  return text ? text : null;
-}
-
-function parseSellerType(document: Document): SellerType {
-  const seller = document.querySelector(".seller-info");
-  const sellerType = seller?.getAttribute("data-seller-type");
-
-  if (sellerType === "self_operated") {
-    return "self_operated";
-  }
-
-  const sellerText = seller?.textContent ?? "";
-  if (/京东自营/i.test(sellerText)) {
-    return "self_operated";
-  }
-
-  return "marketplace";
-}
-
-function parseUnitPrice(document: Document): number {
-  const priceText =
-    document.querySelector(".price")?.textContent?.replace(/\s+/g, " ").trim() ??
-    document.querySelector("[data-price]")?.getAttribute("data-price")?.trim() ??
-    null;
-
-  if (!priceText) {
-    return 0;
-  }
-
-  const normalized = priceText.replace(/[￥,]/g, "");
-  const parsed = Number.parseFloat(normalized);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
+import {
+  PRODUCT_SELECTORS,
+  detectSellerType,
+  parseNumber,
+  textOf,
+} from "../config/selectors.js";
+import type { ProductPageModel } from "../types/product.js";
 
 export function parseJdProductDocument(document: Document): ProductPageModel {
   const title =
-    textContentOf(document, "#product-name") ??
-    textContentOf(document, "title") ??
+    textOf(document, PRODUCT_SELECTORS.title) ??
+    document.querySelector("title")?.textContent?.replace(/\s+/g, " ").trim() ??
     "Unknown product";
 
+  const priceText =
+    textOf(document, PRODUCT_SELECTORS.price);
+  const unitPrice = parseNumber(priceText);
+
+  const sellerType = detectSellerType(
+    document,
+    PRODUCT_SELECTORS.selfBadge,
+    PRODUCT_SELECTORS.sellerInfo,
+  );
+
   const deliveryEta =
-    textContentOf(document, ".delivery")?.replace(/^预计\s*/, "") ?? null;
+    textOf(document, PRODUCT_SELECTORS.delivery)?.replace(/^预计\s*/, "") ?? null;
 
   const packageLabel =
-    textContentOf(document, ".package-info")
-      ?.replace(/^规格：\s*/, "")
+    textOf(document, PRODUCT_SELECTORS.packageInfo)
+      ?.replace(/^规格[：:]\s*/, "")
       .trim() ?? null;
 
-  return {
-    title,
-    unitPrice: parseUnitPrice(document),
-    sellerType: parseSellerType(document),
-    deliveryEta,
-    packageLabel,
-  };
+  return { title, unitPrice, sellerType, deliveryEta, packageLabel };
 }
 
 export function parseJdProductPage(html: string): ProductPageModel {
