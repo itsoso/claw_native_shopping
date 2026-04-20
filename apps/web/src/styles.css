@@ -51,3 +51,11 @@ button.scenario.selected { border-color: var(--accent); background: rgba(79, 140
 
 .error { padding: 10px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; color: #fecaca; }
 .error strong { display: block; margin-bottom: 4px; color: #fca5a5; }
+
+/* App navigation */
+.app-nav { display: flex; align-items: center; gap: 16px; padding: 12px 32px; background: #0d1526; border-bottom: 1px solid var(--border); max-width: 1400px; margin: 0 auto; }
+.app-nav-brand { font-size: 16px; font-weight: 800; color: var(--accent); letter-spacing: 0.04em; }
+.app-nav-tabs { display: flex; gap: 4px; }
+.app-nav-tab { appearance: none; border: 1px solid transparent; border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: var(--muted); transition: all 160ms ease; }
+.app-nav-tab:hover { color: var(--fg); }
+.app-nav-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }

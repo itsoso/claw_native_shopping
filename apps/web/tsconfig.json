@@ -5,7 +5,10 @@
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "types": ["node", "vite/client", "vitest/globals"],
     "moduleResolution": "Bundler",
-    "module": "ESNext"
+    "module": "ESNext",
+    "paths": {
+      "@extension/*": ["../browser-extension/src/*"]
+    }
   },
   "include": ["src", "../../tests/web"],
   "exclude": []
