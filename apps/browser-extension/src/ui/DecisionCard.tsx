@@ -1,8 +1,10 @@
 import type { CSSProperties } from "react";
 
 import type { DecisionMode } from "../types/preferences.js";
+import type { PriceHistoryInfo } from "../types/product.js";
 import type { VerificationBadgeInfo } from "../types/verification.js";
 import { PreferenceMode } from "./PreferenceMode.js";
+import { PriceTrendBadge } from "./PriceTrendBadge.js";
 import { VerificationBadge } from "./VerificationBadge.js";
 
 export type DecisionCardAction = {
@@ -18,6 +20,7 @@ export type DecisionCardProps = {
   footerActions?: DecisionCardAction[];
   verification?: VerificationBadgeInfo | undefined;
   onVerificationDetailsViewed?: (() => void) | undefined;
+  priceTrend?: PriceHistoryInfo | undefined;
 };
 
 const cardStyle: CSSProperties = {
@@ -96,6 +99,7 @@ export function DecisionCard({
   footerActions = [],
   verification,
   onVerificationDetailsViewed,
+  priceTrend,
 }: DecisionCardProps) {
   return (
     <section aria-label="OpenClaw shopping decision" style={cardStyle}>
@@ -111,6 +115,7 @@ export function DecisionCard({
           onDetailsViewed={onVerificationDetailsViewed}
         />
       ) : null}
+      {priceTrend ? <PriceTrendBadge priceHistory={priceTrend} /> : null}
       <p style={reasonStyle}>{reason}</p>
       {footerActions.length > 0 ? (
         <div style={actionsStyle}>

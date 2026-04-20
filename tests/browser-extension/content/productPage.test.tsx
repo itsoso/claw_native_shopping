@@ -43,6 +43,13 @@ vi.mock(
   }),
 );
 
+vi.mock(
+  "../../../apps/browser-extension/src/parsers/fetchPriceHistory.js",
+  () => ({
+    requestPriceHistory: vi.fn().mockResolvedValue(null),
+  }),
+);
+
 import { ProductPagePanel } from "../../../apps/browser-extension/src/content/productPage.js";
 
 const MOCK_MODEL = {

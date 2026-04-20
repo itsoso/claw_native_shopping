@@ -1,5 +1,6 @@
 import type { VerificationBadgeInfo } from "@extension/types/verification.js";
 import type { DecisionMode } from "@extension/types/preferences.js";
+import type { PriceHistoryInfo, ProductPageModel } from "@extension/types/product.js";
 
 export type DemoProduct = {
   id: string;
@@ -11,6 +12,9 @@ export type DemoProduct = {
   specs: string;
   category: string;
   verification: VerificationBadgeInfo | undefined;
+  priceHistory: PriceHistoryInfo | undefined;
+  alternatives: ProductPageModel[];
+  alternativeUrls: Record<string, string>;
   recommendation: {
     primaryAction: string;
     reason: string;
@@ -36,6 +40,21 @@ export const demoProducts: DemoProduct[] = [
       summary: "正宗五常产区，香气浓郁，口感软糯，无农残超标",
       verificationCount: 3,
     },
+    priceHistory: {
+      trend: "average",
+      currentPrice: 89.9,
+      lowestPrice: 69.9,
+      highestPrice: 119.9,
+      averagePrice: 92.0,
+    },
+    alternatives: [
+      { title: "盘锦大米 5kg", unitPrice: 59.9, sellerType: "self_operated", deliveryEta: "明天送达", packageLabel: null },
+      { title: "泰国茉莉香米 5kg", unitPrice: 109.9, sellerType: "marketplace", deliveryEta: "后天送达", packageLabel: null },
+    ],
+    alternativeUrls: {
+      "盘锦大米 5kg": "https://item.jd.com/demo-001.html",
+      "泰国茉莉香米 5kg": "https://item.jd.com/demo-002.html",
+    },
     recommendation: {
       primaryAction: "建议购买",
       reason: "品质验证 A 级，3 次独立验证确认正宗五常产区。京东自营渠道可靠，明日达配送。当前价格 ¥17.98/kg 处于历史均价区间。",
@@ -59,6 +78,21 @@ export const demoProducts: DemoProduct[] = [
       summary: "真牛肉原料，口感偏硬但风味正宗，含水量略高于标准",
       verificationCount: 2,
     },
+    priceHistory: {
+      trend: "high",
+      currentPrice: 128.0,
+      lowestPrice: 89.0,
+      highestPrice: 138.0,
+      averagePrice: 108.0,
+    },
+    alternatives: [
+      { title: "科尔沁风干牛肉 500g", unitPrice: 98.0, sellerType: "self_operated", deliveryEta: "明天送达", packageLabel: null },
+      { title: "张飞牛肉干 500g", unitPrice: 79.9, sellerType: "marketplace", deliveryEta: null, packageLabel: null },
+    ],
+    alternativeUrls: {
+      "科尔沁风干牛肉 500g": "https://item.jd.com/demo-003.html",
+      "张飞牛肉干 500g": "https://item.jd.com/demo-004.html",
+    },
     recommendation: {
       primaryAction: "可以购买",
       reason: "品质验证 B 级，原料真实但含水量略高。第三方店铺，建议关注保质期。¥256/kg 价格中等偏上，如不急可等促销。",
@@ -75,6 +109,15 @@ export const demoProducts: DemoProduct[] = [
     specs: "4对8只 / 礼盒",
     category: "生鲜水产",
     verification: undefined,
+    priceHistory: {
+      trend: "average",
+      currentPrice: 698.0,
+      lowestPrice: 598.0,
+      highestPrice: 898.0,
+      averagePrice: 720.0,
+    },
+    alternatives: [],
+    alternativeUrls: {},
     recommendation: {
       primaryAction: "暂不建议购买",
       reason: "尚无品质验证数据，阳澄湖大闸蟹市场 \"洗澡蟹\" 比例较高。建议等待验证结果或选择已验证的替代商品。",
@@ -97,6 +140,21 @@ export const demoProducts: DemoProduct[] = [
       method: "实地溯源 + 照片审核",
       summary: "正宗阿克苏产区，冰糖心率 90%+，果径均匀，甜度达标",
       verificationCount: 4,
+    },
+    priceHistory: {
+      trend: "low",
+      currentPrice: 59.9,
+      lowestPrice: 55.0,
+      highestPrice: 89.9,
+      averagePrice: 72.0,
+    },
+    alternatives: [
+      { title: "烟台红富士苹果 5kg", unitPrice: 49.9, sellerType: "self_operated", deliveryEta: "明天送达", packageLabel: null },
+      { title: "洛川苹果 5kg", unitPrice: 65.0, sellerType: "marketplace", deliveryEta: "后天送达", packageLabel: null },
+    ],
+    alternativeUrls: {
+      "烟台红富士苹果 5kg": "https://item.jd.com/demo-005.html",
+      "洛川苹果 5kg": "https://item.jd.com/demo-006.html",
     },
     recommendation: {
       primaryAction: "强烈推荐",

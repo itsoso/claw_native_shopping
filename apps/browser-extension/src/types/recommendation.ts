@@ -1,9 +1,10 @@
-import type { ProductPageModel } from "./product.js";
+import type { PriceHistoryInfo, ProductPageModel } from "./product.js";
 import type { DecisionMode } from "./preferences.js";
 
 export type ProductDecisionInput = {
   current: ProductPageModel;
   alternatives: ProductPageModel[];
+  priceHistory?: PriceHistoryInfo | undefined;
 };
 
 export type ProductDecisionOutput = {

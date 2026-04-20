@@ -7,3 +7,13 @@ export type ProductPageModel = {
   deliveryEta: string | null;
   packageLabel: string | null;
 };
+
+export type PriceTrend = "low" | "average" | "high";
+
+export type PriceHistoryInfo = {
+  trend: PriceTrend;
+  currentPrice: number;
+  lowestPrice: number;
+  highestPrice: number;
+  averagePrice: number;
+};

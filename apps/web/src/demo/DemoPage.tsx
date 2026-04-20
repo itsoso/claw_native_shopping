@@ -160,6 +160,7 @@ export function DemoPage() {
               primaryAction={verifiedProduct.recommendation.primaryAction}
               reason={verifiedProduct.recommendation.reason}
               verification={verifiedProduct.verification}
+              priceTrend={verifiedProduct.priceHistory}
             />
           ) : null}
         </div>

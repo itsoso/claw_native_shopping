@@ -9,7 +9,9 @@ export type ProductPageEventType =
   | "preference_changed"
   | "verification_shown"
   | "verification_details_viewed"
-  | "alternative_suggested";
+  | "alternative_suggested"
+  | "comparison_viewed"
+  | "price_history_viewed";
 
 export type CartPageEventType = "cart_plan_shown" | "cart_plan_applied";
 

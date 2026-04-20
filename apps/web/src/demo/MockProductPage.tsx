@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from "react";
 
+import { ComparisonTable } from "@extension/ui/ComparisonTable.js";
 import { DecisionCard } from "@extension/ui/DecisionCard.js";
 import type { DecisionMode } from "@extension/types/preferences.js";
 import type { DemoProduct } from "./products.js";
@@ -133,11 +134,21 @@ const categoryIcons: Record<string, string> = {
 
 export function MockProductPage({ product }: MockProductPageProps) {
   const [mode, setMode] = useState<DecisionMode>(product.recommendation.mode);
+  const [showComparison, setShowComparison] = useState(false);
 
   const selfOperated = product.sellerType === "self_operated";
   const sellerTagColor = selfOperated
     ? { background: "#fef2f2", color: "#e4393c" }
     : { background: "#f0f9ff", color: "#0369a1" };
+
+  const hasAlternatives = product.alternatives.length > 0;
+  const currentModel = {
+    title: product.title,
+    unitPrice: product.price,
+    sellerType: product.sellerType,
+    deliveryEta: product.deliveryEta,
+    packageLabel: product.specs,
+  };
 
   return (
     <div style={pageStyle}>
@@ -189,12 +200,24 @@ export function MockProductPage({ product }: MockProductPageProps) {
           mode={mode}
           onModeChange={setMode}
           verification={product.verification}
+          priceTrend={product.priceHistory}
           footerActions={[
             { label: "应用建议" },
             { label: "查看详情" },
-            { label: "对比替代" },
+            ...(hasAlternatives
+              ? [{ label: showComparison ? "收起对比" : "对比详情", onClick: () => setShowComparison((p) => !p) }]
+              : []),
           ]}
         />
+        {showComparison && hasAlternatives ? (
+          <ComparisonTable
+            current={currentModel}
+            alternatives={product.alternatives}
+            chosen={currentModel}
+            alternativeUrls={product.alternativeUrls}
+            mode={mode}
+          />
+        ) : null}
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import type {
   AsyncParseResult,
 } from "../parsers/asyncProductParser.js";
 import { parseJdProductAsync } from "../parsers/asyncProductParser.js";
+import { requestPriceHistory } from "../parsers/fetchPriceHistory.js";
 import { buildProductDecision } from "../recommendation/buildProductDecision.js";
 import { fetchVerification } from "../recommendation/fetchVerification.js";
 import { recordEvent } from "../storage/events.js";
@@ -15,8 +16,10 @@ import type {
   ProductDecisionOutput,
   ProductDecisionProps,
 } from "../types/recommendation.js";
+import type { PriceHistoryInfo } from "../types/product.js";
 import type { ProductPageModel } from "../types/product.js";
 import type { VerificationBadgeInfo } from "../types/verification.js";
+import { ComparisonTable } from "../ui/ComparisonTable.js";
 import { DecisionCard } from "../ui/DecisionCard.js";
 import type { DecisionCardAction } from "../ui/DecisionCard.js";
 import { ParserStatusCard } from "../ui/ParserStatusCard.js";
@@ -39,11 +42,13 @@ export function buildProductPageDecision(
   model: ProductPageModel,
   mode: DecisionMode = "time_saving",
   alternatives: ProductPageModel[] = [],
+  priceHistoryInfo?: PriceHistoryInfo | undefined,
 ): ProductDecisionOutput {
   return buildProductDecision(
     {
       current: model,
       alternatives,
+      priceHistory: priceHistoryInfo,
     },
     { mode },
   );
@@ -63,6 +68,8 @@ export function ProductPagePanel() {
   const [parseResult, setParseResult] = useState<AsyncParseResult | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [verification, setVerification] = useState<VerificationBadgeInfo | null>(null);
+  const [priceHistory, setPriceHistory] = useState<PriceHistoryInfo | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
 
   const runParse = useCallback(() => {
     setParseResult(null);
@@ -125,8 +132,31 @@ export function ProductPagePanel() {
     };
   }, [parseResult]);
 
+  useEffect(() => {
+    if (!parseResult) {
+      return;
+    }
+    let active = true;
+    const skuMatch = location.href.match(/\/(\d+)\.html/);
+    const skuId = skuMatch?.[1];
+    if (!skuId) return;
+
+    void requestPriceHistory(skuId)
+      .then((result) => {
+        if (active && result) {
+          setPriceHistory(result);
+          recordProductEvent("price_history_viewed", mode);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [parseResult]);
+
   const decision = parseResult
-    ? buildProductPageDecision(parseResult.model, mode, parseResult.alternatives)
+    ? buildProductPageDecision(parseResult.model, mode, parseResult.alternatives, priceHistory ?? undefined)
     : null;
 
   const suggestsAlternative = decision !== null && parseResult !== null && decision.chosen !== parseResult.model;
@@ -190,6 +220,15 @@ export function ProductPagePanel() {
     recordProductEvent("verification_details_viewed", mode);
   };
 
+  const hasAlternatives = parseResult.alternatives.length > 0;
+
+  const handleComparisonToggle = () => {
+    if (!showComparison) {
+      recordProductEvent("comparison_viewed", mode);
+    }
+    setShowComparison((prev) => !prev);
+  };
+
   const footerActions: DecisionCardAction[] = [
     {
       label: "应用建议",
@@ -199,6 +238,9 @@ export function ProductPagePanel() {
       label: "查看原因",
       onClick: handleReasonView,
     },
+    ...(hasAlternatives
+      ? [{ label: showComparison ? "收起对比" : "对比详情", onClick: handleComparisonToggle }]
+      : []),
     {
       label: "调整偏好",
       onClick: () => undefined,
@@ -206,14 +248,26 @@ export function ProductPagePanel() {
   ];
 
   return (
-    <DecisionCard
-      primaryAction={decision!.primaryAction}
-      reason={decision!.reason}
-      mode={mode}
-      onModeChange={handleModeChange}
-      footerActions={footerActions}
-      verification={verification ?? undefined}
-      onVerificationDetailsViewed={handleVerificationDetailsViewed}
-    />
+    <>
+      <DecisionCard
+        primaryAction={decision!.primaryAction}
+        reason={decision!.reason}
+        mode={mode}
+        onModeChange={handleModeChange}
+        footerActions={footerActions}
+        verification={verification ?? undefined}
+        onVerificationDetailsViewed={handleVerificationDetailsViewed}
+        priceTrend={priceHistory ?? undefined}
+      />
+      {showComparison && hasAlternatives ? (
+        <ComparisonTable
+          current={parseResult.model}
+          alternatives={parseResult.alternatives}
+          chosen={decision!.chosen}
+          alternativeUrls={parseResult.alternativeUrls}
+          mode={mode}
+        />
+      ) : null}
+    </>
   );
 }

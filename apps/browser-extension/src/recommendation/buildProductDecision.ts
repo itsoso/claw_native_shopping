@@ -1,4 +1,4 @@
-import type { ProductPageModel } from "../types/product.js";
+import type { PriceHistoryInfo, ProductPageModel } from "../types/product.js";
 import type { DecisionPreferences } from "../types/preferences.js";
 import type {
   ProductDecisionInput,
@@ -50,19 +50,31 @@ function describeSeller(product: ProductPageModel): string {
   return product.sellerType === "self_operated" ? "自营" : "商家";
 }
 
-function describeReason(product: ProductPageModel, mode: DecisionPreferences["mode"]): string {
+function describeTrend(priceHistory: PriceHistoryInfo | undefined): string {
+  if (!priceHistory) return "";
+  if (priceHistory.trend === "low") return "，近期低价";
+  if (priceHistory.trend === "high") return "，价格偏高";
+  return "";
+}
+
+function describeReason(
+  product: ProductPageModel,
+  mode: DecisionPreferences["mode"],
+  priceHistory?: PriceHistoryInfo | undefined,
+): string {
   const seller = describeSeller(product);
   const delivery = product.deliveryEta ?? "暂无明确时效";
+  const trend = describeTrend(priceHistory);
 
   if (mode === "value") {
-    return `${seller}，单价 ${product.unitPrice.toFixed(2)} 元，更划算`;
+    return `${seller}，单价 ${product.unitPrice.toFixed(2)} 元${trend}，更划算`;
   }
 
   if (mode === "safe") {
-    return `${seller}，${delivery}，更稳妥`;
+    return `${seller}，${delivery}${trend}，更稳妥`;
   }
 
-  return `${seller}，${delivery}，更省时间`;
+  return `${seller}，${delivery}${trend}，更省时间`;
 }
 
 function buildPrimaryAction(
@@ -89,10 +101,12 @@ export function buildProductDecision(
     return candidateScore > bestScore ? candidate : best;
   }, input.current);
 
+  const chosenHistory = chosen === input.current ? input.priceHistory : undefined;
+
   return {
     mode: preferences.mode,
     chosen,
     primaryAction: buildPrimaryAction(input.current, chosen),
-    reason: describeReason(chosen, preferences.mode),
+    reason: describeReason(chosen, preferences.mode, chosenHistory),
   };
 }
