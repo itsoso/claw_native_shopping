@@ -1,7 +1,9 @@
 import type { CSSProperties } from "react";
 
 import type { DecisionMode } from "../types/preferences.js";
+import type { VerificationBadgeInfo } from "../types/verification.js";
 import { PreferenceMode } from "./PreferenceMode.js";
+import { VerificationBadge } from "./VerificationBadge.js";
 
 export type DecisionCardAction = {
   label: string;
@@ -14,6 +16,8 @@ export type DecisionCardProps = {
   mode?: DecisionMode;
   onModeChange?: (mode: DecisionMode) => void;
   footerActions?: DecisionCardAction[];
+  verification?: VerificationBadgeInfo | undefined;
+  onVerificationDetailsViewed?: (() => void) | undefined;
 };
 
 const cardStyle: CSSProperties = {
@@ -90,6 +94,8 @@ export function DecisionCard({
   mode,
   onModeChange,
   footerActions = [],
+  verification,
+  onVerificationDetailsViewed,
 }: DecisionCardProps) {
   return (
     <section aria-label="OpenClaw shopping decision" style={cardStyle}>
@@ -99,6 +105,12 @@ export function DecisionCard({
         <PreferenceMode value={mode} onChange={onModeChange} />
       ) : null}
       <h2 style={primaryStyle}>{primaryAction}</h2>
+      {verification ? (
+        <VerificationBadge
+          verification={verification}
+          onDetailsViewed={onVerificationDetailsViewed}
+        />
+      ) : null}
       <p style={reasonStyle}>{reason}</p>
       {footerActions.length > 0 ? (
         <div style={actionsStyle}>

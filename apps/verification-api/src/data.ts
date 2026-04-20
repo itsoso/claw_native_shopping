@@ -1,0 +1,415 @@
+import type { VerificationReport } from "../../../packages/contracts/src/verification-report.js";
+
+export type VerificationProduct = {
+  skuId: string;
+  name: string;
+  category: string;
+  specs: Record<string, string | number>;
+  pricing: {
+    unitPriceCents: number;
+    pricePer100gCents?: number | undefined;
+  };
+  verificationReport: VerificationReport;
+};
+
+export const verificationProducts: VerificationProduct[] = [
+  {
+    skuId: "ks_beef_001",
+    name: "内蒙古锡盟风干牛肉干 500g",
+    category: "food.dried_meat",
+    specs: { weight_g: 500, origin: "锡林郭勒盟", shelf_life_days: 180 },
+    pricing: { unitPriceCents: 3580, pricePer100gCents: 716 },
+    verificationReport: {
+      skuId: "ks_beef_001",
+      verified: true,
+      verificationCount: 3,
+      records: [
+        {
+          verifierId: "anchor_zhang",
+          verifierTrustScore: 0.91,
+          verifierCategoryExpertise: "food.dried_meat",
+          date: "2026-03-10",
+          method: "live_tasting",
+          structuredAssessment: {
+            texture: "适中偏硬，有嚼劲",
+            flavor: "原味，微咸，无明显添加剂味",
+            appearance: "色泽均匀，无异物",
+            overallGrade: "A",
+          },
+          evidenceUrls: [],
+        },
+        {
+          verifierId: "anchor_li",
+          verifierTrustScore: 0.85,
+          verifierCategoryExpertise: "food.general",
+          date: "2026-02-20",
+          method: "photo_review",
+          structuredAssessment: {
+            texture: "偏硬，耐嚼",
+            flavor: "咸香适中",
+            appearance: "包装完好，干燥度合格",
+            overallGrade: "A",
+          },
+          evidenceUrls: [],
+        },
+        {
+          verifierId: "community_wang",
+          verifierTrustScore: 0.72,
+          verifierCategoryExpertise: "food.dried_meat",
+          date: "2026-01-15",
+          method: "live_tasting",
+          structuredAssessment: {
+            texture: "韧劲足",
+            flavor: "原味偏咸，适合下酒",
+            appearance: "大小均匀",
+            overallGrade: "B",
+          },
+          evidenceUrls: [],
+        },
+      ],
+      communitySignal: {
+        repeatPurchaseRate: 0.34,
+        positiveFeedbackRatio: 0.89,
+        sampleSize: 1247,
+      },
+      updatedAt: "2026-03-15T10:00:00Z",
+    },
+  },
+  {
+    skuId: "ks_apple_002",
+    name: "新疆阿克苏冰糖心苹果 5kg",
+    category: "food.fruit",
+    specs: { weight_kg: 5, origin: "阿克苏", variety: "冰糖心" },
+    pricing: { unitPriceCents: 4980 },
+    verificationReport: {
+      skuId: "ks_apple_002",
+      verified: true,
+      verificationCount: 2,
+      records: [
+        {
+          verifierId: "anchor_chen",
+          verifierTrustScore: 0.88,
+          verifierCategoryExpertise: "food.fruit",
+          date: "2026-03-08",
+          method: "live_tasting",
+          structuredAssessment: {
+            texture: "脆甜，汁水丰富",
+            flavor: "甜度高，冰糖心明显",
+            appearance: "果形端正，表面光洁",
+            overallGrade: "A",
+          },
+          evidenceUrls: [],
+        },
+        {
+          verifierId: "community_liu",
+          verifierTrustScore: 0.68,
+          verifierCategoryExpertise: "food.fruit",
+          date: "2026-02-28",
+          method: "photo_review",
+          structuredAssessment: {
+            texture: "脆",
+            flavor: "甜",
+            appearance: "大小均匀，无伤果",
+            overallGrade: "A",
+          },
+          evidenceUrls: [],
+        },
+      ],
+      communitySignal: {
+        repeatPurchaseRate: 0.41,
+        positiveFeedbackRatio: 0.92,
+        sampleSize: 2340,
+      },
+      updatedAt: "2026-03-12T08:00:00Z",
+    },
+  },
+  {
+    skuId: "ks_rice_003",
+    name: "五常大米 稻花香二号 10kg",
+    category: "food.grain",
+    specs: { weight_kg: 10, origin: "五常", variety: "稻花香二号" },
+    pricing: { unitPriceCents: 8980, pricePer100gCents: 90 },
+    verificationReport: {
+      skuId: "ks_rice_003",
+      verified: true,
+      verificationCount: 2,
+      records: [
+        {
+          verifierId: "anchor_sun",
+          verifierTrustScore: 0.93,
+          verifierCategoryExpertise: "food.grain",
+          date: "2026-03-05",
+          method: "live_inspection",
+          structuredAssessment: {
+            texture: "米粒饱满，煮后软糯",
+            flavor: "米香浓郁，回甘明显",
+            appearance: "色泽洁白，碎米率低",
+            overallGrade: "A",
+          },
+          evidenceUrls: [],
+        },
+        {
+          verifierId: "anchor_zhang",
+          verifierTrustScore: 0.91,
+          verifierCategoryExpertise: "food.general",
+          date: "2026-02-15",
+          method: "lab_test",
+          structuredAssessment: {
+            texture: "黏性适中",
+            flavor: "符合稻花香特征",
+            appearance: "符合国标一等",
+            overallGrade: "A",
+            notes: "第三方检测报告编号 QC-2026-0215",
+          },
+          evidenceUrls: [],
+        },
+      ],
+      communitySignal: {
+        repeatPurchaseRate: 0.52,
+        positiveFeedbackRatio: 0.94,
+        sampleSize: 3821,
+      },
+      updatedAt: "2026-03-10T12:00:00Z",
+    },
+  },
+  {
+    skuId: "ks_tea_004",
+    name: "云南古树普洱 熟茶饼 357g",
+    category: "food.tea",
+    specs: { weight_g: 357, origin: "云南西双版纳", type: "熟茶" },
+    pricing: { unitPriceCents: 12800 },
+    verificationReport: {
+      skuId: "ks_tea_004",
+      verified: true,
+      verificationCount: 1,
+      records: [
+        {
+          verifierId: "anchor_zhou",
+          verifierTrustScore: 0.95,
+          verifierCategoryExpertise: "food.tea",
+          date: "2026-03-01",
+          method: "live_tasting",
+          structuredAssessment: {
+            texture: "汤感醇厚顺滑",
+            flavor: "陈香明显，无堆味，回甘持久",
+            appearance: "饼面匀整，金芽显露",
+            overallGrade: "A",
+          },
+          evidenceUrls: [],
+        },
+      ],
+      updatedAt: "2026-03-05T09:00:00Z",
+    },
+  },
+  {
+    skuId: "ks_tieguanyin_005",
+    name: "福建安溪铁观音 特级 250g",
+    category: "food.tea",
+    specs: { weight_g: 250, origin: "安溪", grade: "特级" },
+    pricing: { unitPriceCents: 6880 },
+    verificationReport: {
+      skuId: "ks_tieguanyin_005",
+      verified: true,
+      verificationCount: 2,
+      records: [
+        {
+          verifierId: "anchor_zhou",
+          verifierTrustScore: 0.95,
+          verifierCategoryExpertise: "food.tea",
+          date: "2026-03-12",
+          method: "live_tasting",
+          structuredAssessment: {
+            texture: "入口甘爽，喉韵明显",
+            flavor: "兰花香显，观音韵正",
+            appearance: "颗粒紧结，色泽砂绿",
+            overallGrade: "B",
+          },
+          evidenceUrls: [],
+        },
+        {
+          verifierId: "community_xu",
+          verifierTrustScore: 0.7,
+          verifierCategoryExpertise: "food.tea",
+          date: "2026-02-25",
+          method: "photo_review",
+          structuredAssessment: {
+            texture: "口感清爽",
+            flavor: "香气一般，不如预期",
+            appearance: "外形尚可",
+            overallGrade: "B",
+            notes: "与标注特级有差距",
+          },
+          evidenceUrls: [],
+        },
+      ],
+      communitySignal: {
+        repeatPurchaseRate: 0.22,
+        positiveFeedbackRatio: 0.71,
+        sampleSize: 580,
+      },
+      updatedAt: "2026-03-14T11:00:00Z",
+    },
+  },
+  {
+    skuId: "ks_orange_006",
+    name: "赣南脐橙 精选特级 5kg",
+    category: "food.fruit",
+    specs: { weight_kg: 5, origin: "赣州", grade: "特级" },
+    pricing: { unitPriceCents: 3980 },
+    verificationReport: {
+      skuId: "ks_orange_006",
+      verified: true,
+      verificationCount: 1,
+      records: [
+        {
+          verifierId: "anchor_chen",
+          verifierTrustScore: 0.88,
+          verifierCategoryExpertise: "food.fruit",
+          date: "2026-03-06",
+          method: "live_tasting",
+          structuredAssessment: {
+            texture: "果肉细嫩，化渣好",
+            flavor: "酸甜适中，汁水饱满",
+            appearance: "果皮橙红，果形端正",
+            overallGrade: "A",
+          },
+          evidenceUrls: [],
+        },
+      ],
+      communitySignal: {
+        repeatPurchaseRate: 0.38,
+        positiveFeedbackRatio: 0.87,
+        sampleSize: 1560,
+      },
+      updatedAt: "2026-03-10T14:00:00Z",
+    },
+  },
+  {
+    skuId: "ks_goji_007",
+    name: "宁夏枸杞 特优级 500g",
+    category: "food.dried_goods",
+    specs: { weight_g: 500, origin: "中宁", grade: "特优" },
+    pricing: { unitPriceCents: 4580, pricePer100gCents: 916 },
+    verificationReport: {
+      skuId: "ks_goji_007",
+      verified: true,
+      verificationCount: 1,
+      records: [
+        {
+          verifierId: "anchor_li",
+          verifierTrustScore: 0.85,
+          verifierCategoryExpertise: "food.dried_goods",
+          date: "2026-02-18",
+          method: "live_inspection",
+          structuredAssessment: {
+            texture: "果粒饱满，干燥适度",
+            flavor: "甜度高，无苦味",
+            appearance: "色泽鲜红，大小均匀",
+            overallGrade: "B",
+            notes: "部分果粒偏小，与特优级标准略有差距",
+          },
+          evidenceUrls: [],
+        },
+      ],
+      updatedAt: "2026-02-20T16:00:00Z",
+    },
+  },
+  {
+    skuId: "ks_fungus_008",
+    name: "东北黑木耳 干货 200g",
+    category: "food.dried_goods",
+    specs: { weight_g: 200, origin: "东宁" },
+    pricing: { unitPriceCents: 2280, pricePer100gCents: 1140 },
+    verificationReport: {
+      skuId: "ks_fungus_008",
+      verified: true,
+      verificationCount: 1,
+      records: [
+        {
+          verifierId: "anchor_sun",
+          verifierTrustScore: 0.93,
+          verifierCategoryExpertise: "food.dried_goods",
+          date: "2026-03-02",
+          method: "live_inspection",
+          structuredAssessment: {
+            texture: "泡发后肉厚，口感脆嫩",
+            flavor: "味道鲜美，无异味",
+            appearance: "朵形完整，无碎片",
+            overallGrade: "A",
+          },
+          evidenceUrls: [],
+        },
+      ],
+      communitySignal: {
+        repeatPurchaseRate: 0.45,
+        positiveFeedbackRatio: 0.91,
+        sampleSize: 890,
+      },
+      updatedAt: "2026-03-05T10:00:00Z",
+    },
+  },
+  {
+    skuId: "ks_crab_009",
+    name: "阳澄湖大闸蟹 公蟹3.5两 母蟹2.5两 4对装",
+    category: "food.seafood",
+    specs: { pairs: 4, male_weight: "3.5两", female_weight: "2.5两", origin: "阳澄湖" },
+    pricing: { unitPriceCents: 29800 },
+    verificationReport: {
+      skuId: "ks_crab_009",
+      verified: false,
+      verificationCount: 0,
+      records: [],
+      updatedAt: "2026-03-01T00:00:00Z",
+    },
+  },
+  {
+    skuId: "ks_crayfish_010",
+    name: "湖北潜江小龙虾 4-6钱 净重3斤",
+    category: "food.seafood",
+    specs: { weight_jin: 3, size: "4-6钱", origin: "潜江" },
+    pricing: { unitPriceCents: 6980 },
+    verificationReport: {
+      skuId: "ks_crayfish_010",
+      verified: true,
+      verificationCount: 2,
+      records: [
+        {
+          verifierId: "anchor_wu",
+          verifierTrustScore: 0.82,
+          verifierCategoryExpertise: "food.seafood",
+          date: "2026-03-14",
+          method: "live_tasting",
+          structuredAssessment: {
+            texture: "肉质紧实，虾黄饱满",
+            flavor: "麻辣鲜香，入味均匀",
+            appearance: "个头均匀，色泽鲜亮",
+            overallGrade: "B",
+            notes: "部分虾偏小，接近4钱下限",
+          },
+          evidenceUrls: [],
+        },
+        {
+          verifierId: "community_zhao",
+          verifierTrustScore: 0.65,
+          verifierCategoryExpertise: "food.seafood",
+          date: "2026-03-10",
+          method: "photo_review",
+          structuredAssessment: {
+            texture: "看起来新鲜",
+            flavor: "口味不错",
+            appearance: "冰鲜包装，有冰袋",
+            overallGrade: "C",
+            notes: "到货有2只死虾",
+          },
+          evidenceUrls: [],
+        },
+      ],
+      communitySignal: {
+        repeatPurchaseRate: 0.18,
+        positiveFeedbackRatio: 0.73,
+        sampleSize: 420,
+      },
+      updatedAt: "2026-03-15T16:00:00Z",
+    },
+  },
+];

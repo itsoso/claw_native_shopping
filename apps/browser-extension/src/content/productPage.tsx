@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { parseJdProductDocument } from "../parsers/productPage.js";
 import { buildProductDecision } from "../recommendation/buildProductDecision.js";
+import { fetchVerification } from "../recommendation/fetchVerification.js";
 import { recordEvent } from "../storage/events.js";
 import { loadPreferences, savePreferences } from "../storage/preferences.js";
 import type { ProductPageEventType } from "../types/events.js";
@@ -10,6 +11,7 @@ import type {
   ProductDecisionOutput,
   ProductDecisionProps,
 } from "../types/recommendation.js";
+import type { VerificationBadgeInfo } from "../types/verification.js";
 import { DecisionCard } from "../ui/DecisionCard.js";
 import type { DecisionCardAction } from "../ui/DecisionCard.js";
 
@@ -52,6 +54,7 @@ export function toDecisionCardProps(
 
 export function ProductPagePanel() {
   const [mode, setMode] = useState<DecisionMode>(FALLBACK_DECISION_MODE);
+  const [verification, setVerification] = useState<VerificationBadgeInfo | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -74,6 +77,24 @@ export function ProductPagePanel() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    const product = parseJdProductDocument(document);
+
+    void fetchVerification(product.title)
+      .then((result) => {
+        if (active && result) {
+          setVerification(result);
+          recordProductEvent("verification_shown", mode);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const decision = buildProductPageDecision(document, mode);
 
   const handleModeChange = (nextMode: DecisionMode) => {
@@ -88,6 +109,10 @@ export function ProductPagePanel() {
 
   const handleReasonView = () => {
     recordProductEvent("reason_viewed", mode);
+  };
+
+  const handleVerificationDetailsViewed = () => {
+    recordProductEvent("verification_details_viewed", mode);
   };
 
   const footerActions: DecisionCardAction[] = [
@@ -112,6 +137,8 @@ export function ProductPagePanel() {
       mode={mode}
       onModeChange={handleModeChange}
       footerActions={footerActions}
+      verification={verification ?? undefined}
+      onVerificationDetailsViewed={handleVerificationDetailsViewed}
     />
   );
 }

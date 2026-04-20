@@ -6,6 +6,6 @@ export default defineConfig({
   modules: ["@wxt-dev/module-react"],
   manifest: {
     permissions: ["storage"],
-    host_permissions: [JD_ITEM_URL, JD_CART_URL]
+    host_permissions: [JD_ITEM_URL, JD_CART_URL, "http://localhost:3200/*"]
   }
 });

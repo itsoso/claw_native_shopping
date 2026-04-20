@@ -6,7 +6,9 @@ export type ProductPageEventType =
   | "recommendation_shown"
   | "recommendation_applied"
   | "reason_viewed"
-  | "preference_changed";
+  | "preference_changed"
+  | "verification_shown"
+  | "verification_details_viewed";
 
 export type CartPageEventType = "cart_plan_shown" | "cart_plan_applied";
 

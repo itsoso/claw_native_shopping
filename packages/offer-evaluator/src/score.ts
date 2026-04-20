@@ -4,6 +4,7 @@ export type OfferCandidate = {
   etaHours: number;
   trust: number;
   policyMatch: number;
+  verificationScore?: number | undefined;
 };
 
 export type RankedOffer = OfferCandidate & {
@@ -17,6 +18,17 @@ const scoreOffer = (offer: OfferCandidate): number => {
   const normalizedTrust = clamp01(offer.trust);
   const normalizedEta = 1 / (1 + Math.max(0, offer.etaHours));
   const normalizedCost = 1 / (1 + Math.max(0, offer.totalCost));
+
+  if (offer.verificationScore !== undefined) {
+    const normalizedVerification = clamp01(offer.verificationScore);
+    return (
+      normalizedPolicy * 0.4 +
+      normalizedTrust * 0.25 +
+      normalizedVerification * 0.15 +
+      normalizedEta * 0.12 +
+      normalizedCost * 0.08
+    );
+  }
 
   return (
     normalizedPolicy * 0.5 +
