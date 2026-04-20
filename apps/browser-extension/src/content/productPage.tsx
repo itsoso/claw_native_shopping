@@ -38,11 +38,12 @@ function recordProductEvent(
 export function buildProductPageDecision(
   model: ProductPageModel,
   mode: DecisionMode = "time_saving",
+  alternatives: ProductPageModel[] = [],
 ): ProductDecisionOutput {
   return buildProductDecision(
     {
       current: model,
-      alternatives: [],
+      alternatives,
     },
     { mode },
   );
@@ -124,6 +125,18 @@ export function ProductPagePanel() {
     };
   }, [parseResult]);
 
+  const decision = parseResult
+    ? buildProductPageDecision(parseResult.model, mode, parseResult.alternatives)
+    : null;
+
+  const suggestsAlternative = decision !== null && parseResult !== null && decision.chosen !== parseResult.model;
+
+  useEffect(() => {
+    if (suggestsAlternative) {
+      recordProductEvent("alternative_suggested", mode);
+    }
+  }, [suggestsAlternative, mode]);
+
   if (!parseResult && !parseError) {
     return (
       <ParserStatusCard status="loading" message="正在分析页面..." />
@@ -144,8 +157,6 @@ export function ProductPagePanel() {
     return null;
   }
 
-  const decision = buildProductPageDecision(parseResult.model, mode);
-
   const handleModeChange = (nextMode: DecisionMode) => {
     setMode(nextMode);
     void savePreferences({ mode: nextMode }).catch(() => undefined);
@@ -154,6 +165,15 @@ export function ProductPagePanel() {
 
   const handleApply = () => {
     recordProductEvent("recommendation_applied", mode);
+
+    if (suggestsAlternative && decision) {
+      const url = parseResult.alternativeUrls[decision.chosen.title];
+      if (url) {
+        window.open(url, "_blank");
+        return;
+      }
+    }
+
     highlightAndScroll(
       PRODUCT_SELECTORS.price.map((s) => ({ selector: s })).concat(
         PRODUCT_SELECTORS.delivery.map((s) => ({ selector: s })),
@@ -187,8 +207,8 @@ export function ProductPagePanel() {
 
   return (
     <DecisionCard
-      primaryAction={decision.primaryAction}
-      reason={decision.reason}
+      primaryAction={decision!.primaryAction}
+      reason={decision!.reason}
       mode={mode}
       onModeChange={handleModeChange}
       footerActions={footerActions}

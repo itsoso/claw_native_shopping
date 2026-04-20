@@ -9,6 +9,20 @@ export const PRODUCT_SELECTORS = {
   packageInfo: [".Ptable", ".package-info"],
 } as const;
 
+export const RECOMMENDATION_SELECTORS = {
+  container: [
+    "#alsoBuy .mc",
+    "#similar .mc",
+    ".shop-recommend",
+    ".p-store-related",
+    "[data-recommend]",
+  ],
+  item: [".gl-item", ".goods-list li", ".mc li", ".items li"],
+  itemName: [".p-name a", ".p-name em", "a[title]"],
+  itemPrice: [".p-price i", ".p-price", ".price"],
+  itemSelfBadge: [".u-jd", ".icon-self-run", ".goods-icon-self"],
+} as const;
+
 export const CART_SELECTORS = {
   item: [".item-form", ".item-item", ".GoodsItem", "[data-cart-item]"],
   itemName: [".p-name a", ".p-name", ".item-title", "[data-item-title]", "h2", "h3"],

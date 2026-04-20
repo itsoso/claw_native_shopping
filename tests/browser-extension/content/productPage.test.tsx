@@ -77,6 +77,8 @@ describe("ProductPagePanel", () => {
     eventMocks.recordEvent.mockResolvedValue(undefined);
     asyncParserMocks.parseJdProductAsync.mockResolvedValue({
       model: MOCK_MODEL,
+      alternatives: [],
+      alternativeUrls: {},
       incomplete: false,
     });
 
@@ -91,6 +93,71 @@ describe("ProductPagePanel", () => {
     });
 
     expect(screen.getByText(/自营.*明天.*更稳妥/)).toBeTruthy();
+  });
+
+  it("shows alternative suggestion when a better product exists", async () => {
+    preferenceMocks.loadPreferences.mockResolvedValue({ mode: "value" });
+    preferenceMocks.savePreferences.mockResolvedValue(undefined);
+    eventMocks.recordEvent.mockResolvedValue(undefined);
+
+    const cheaperAlternative = {
+      title: "奥妙 洗衣液 2kg",
+      unitPrice: 19.9,
+      sellerType: "marketplace" as const,
+      deliveryEta: null,
+      packageLabel: null,
+    };
+
+    asyncParserMocks.parseJdProductAsync.mockResolvedValue({
+      model: MOCK_MODEL,
+      alternatives: [cheaperAlternative],
+      alternativeUrls: { "奥妙 洗衣液 2kg": "https://item.jd.com/200001.html" },
+      incomplete: false,
+    });
+
+    render(<ProductPagePanel />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", {
+          name: /建议改选.*奥妙/,
+        }),
+      ).toBeTruthy();
+    });
+  });
+
+  it("opens alternative URL when applying suggestion for a different product", async () => {
+    preferenceMocks.loadPreferences.mockResolvedValue({ mode: "value" });
+    preferenceMocks.savePreferences.mockResolvedValue(undefined);
+    eventMocks.recordEvent.mockResolvedValue(undefined);
+
+    const cheaperAlternative = {
+      title: "奥妙 洗衣液 2kg",
+      unitPrice: 19.9,
+      sellerType: "marketplace" as const,
+      deliveryEta: null,
+      packageLabel: null,
+    };
+
+    asyncParserMocks.parseJdProductAsync.mockResolvedValue({
+      model: MOCK_MODEL,
+      alternatives: [cheaperAlternative],
+      alternativeUrls: { "奥妙 洗衣液 2kg": "https://item.jd.com/200001.html" },
+      incomplete: false,
+    });
+
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+    render(<ProductPagePanel />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "应用建议" })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "应用建议" }));
+
+    expect(openSpy).toHaveBeenCalledWith("https://item.jd.com/200001.html", "_blank");
+    openSpy.mockRestore();
   });
 
   it("shows error state when parse fails", async () => {
@@ -116,6 +183,8 @@ describe("ProductPagePanel", () => {
       .mockRejectedValueOnce(new Error("fail"))
       .mockResolvedValueOnce({
         model: MOCK_MODEL,
+        alternatives: [],
+        alternativeUrls: {},
         incomplete: false,
       });
 
@@ -144,6 +213,8 @@ describe("ProductPagePanel", () => {
     eventMocks.recordEvent.mockResolvedValue(undefined);
     asyncParserMocks.parseJdProductAsync.mockResolvedValue({
       model: MOCK_MODEL,
+      alternatives: [],
+      alternativeUrls: {},
       incomplete: false,
     });
 

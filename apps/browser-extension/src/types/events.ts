@@ -8,7 +8,8 @@ export type ProductPageEventType =
   | "reason_viewed"
   | "preference_changed"
   | "verification_shown"
-  | "verification_details_viewed";
+  | "verification_details_viewed"
+  | "alternative_suggested";
 
 export type CartPageEventType = "cart_plan_shown" | "cart_plan_applied";
 
