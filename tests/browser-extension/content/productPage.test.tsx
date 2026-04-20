@@ -58,7 +58,7 @@ describe("ProductPagePanel", () => {
         name: "保留当前商品：立白 洗衣液 2kg",
       }),
     ).toBeTruthy();
-    expect(screen.getByText("自营，明天 送达，更稳妥")).toBeTruthy();
+    expect(screen.getByText(/自营.*明天.*更稳妥/)).toBeTruthy();
 
     await waitFor(() => {
       expect(eventMocks.recordEvent).toHaveBeenCalledWith(

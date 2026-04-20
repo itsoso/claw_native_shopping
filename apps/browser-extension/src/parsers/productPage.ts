@@ -4,7 +4,8 @@ import {
   parseNumber,
   textOf,
 } from "../config/selectors.js";
-import type { ProductPageModel } from "../types/product.js";
+import type { ProductPageModel, SellerType } from "../types/product.js";
+import { extractPageConfig } from "./pageConfig.js";
 
 export function parseJdProductDocument(document: Document): ProductPageModel {
   const title =
@@ -16,11 +17,20 @@ export function parseJdProductDocument(document: Document): ProductPageModel {
     textOf(document, PRODUCT_SELECTORS.price);
   const unitPrice = parseNumber(priceText);
 
-  const sellerType = detectSellerType(
-    document,
-    PRODUCT_SELECTORS.selfBadge,
-    PRODUCT_SELECTORS.sellerInfo,
-  );
+  const pageConfig = extractPageConfig(document);
+
+  let sellerType: SellerType;
+  if (pageConfig?.pType === 1) {
+    sellerType = "self_operated";
+  } else if (pageConfig?.pType === 2) {
+    sellerType = "marketplace";
+  } else {
+    sellerType = detectSellerType(
+      document,
+      PRODUCT_SELECTORS.selfBadge,
+      PRODUCT_SELECTORS.sellerInfo,
+    );
+  }
 
   const deliveryEta =
     textOf(document, PRODUCT_SELECTORS.delivery)?.replace(/^预计\s*/, "") ?? null;
