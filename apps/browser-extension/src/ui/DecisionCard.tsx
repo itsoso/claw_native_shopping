@@ -1,10 +1,13 @@
 import type { CSSProperties } from "react";
 
 import type { DecisionMode } from "../types/preferences.js";
-import type { PriceHistoryInfo } from "../types/product.js";
+import type { PriceHistoryInfo, PromotionInfo } from "../types/product.js";
+import type { DecisionExplanation } from "../types/recommendation.js";
 import type { VerificationBadgeInfo } from "../types/verification.js";
 import { PreferenceMode } from "./PreferenceMode.js";
 import { PriceTrendBadge } from "./PriceTrendBadge.js";
+import { PromotionBadge } from "./PromotionBadge.js";
+import { ReasonBreakdownPanel } from "./ReasonBreakdownPanel.js";
 import { VerificationBadge } from "./VerificationBadge.js";
 
 export type DecisionCardAction = {
@@ -21,6 +24,10 @@ export type DecisionCardProps = {
   verification?: VerificationBadgeInfo | undefined;
   onVerificationDetailsViewed?: (() => void) | undefined;
   priceTrend?: PriceHistoryInfo | undefined;
+  promotions?: PromotionInfo | undefined;
+  effectivePrice?: number | undefined;
+  explanation?: DecisionExplanation | undefined;
+  showExplanation?: boolean | undefined;
 };
 
 const cardStyle: CSSProperties = {
@@ -100,6 +107,10 @@ export function DecisionCard({
   verification,
   onVerificationDetailsViewed,
   priceTrend,
+  promotions,
+  effectivePrice,
+  explanation,
+  showExplanation,
 }: DecisionCardProps) {
   return (
     <section aria-label="OpenClaw shopping decision" style={cardStyle}>
@@ -116,7 +127,13 @@ export function DecisionCard({
         />
       ) : null}
       {priceTrend ? <PriceTrendBadge priceHistory={priceTrend} /> : null}
+      {promotions && effectivePrice != null ? (
+        <PromotionBadge promotions={promotions} effectivePrice={effectivePrice} />
+      ) : null}
       <p style={reasonStyle}>{reason}</p>
+      {showExplanation && explanation ? (
+        <ReasonBreakdownPanel explanation={explanation} />
+      ) : null}
       {footerActions.length > 0 ? (
         <div style={actionsStyle}>
           {footerActions.map((action) => (
