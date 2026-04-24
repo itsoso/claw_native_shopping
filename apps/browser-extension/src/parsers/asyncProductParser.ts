@@ -2,6 +2,7 @@ import { PRODUCT_SELECTORS, parseNumber, textOf } from "../config/selectors.js";
 import { RECOMMENDATION_SELECTORS } from "../config/selectors.js";
 import type { ProductPageModel } from "../types/product.js";
 import { parseJdProductDocument } from "./productPage.js";
+import { computeEffectivePrice, parsePromotions } from "./promotionParser.js";
 import { parseRecommendationItems } from "./recommendationParser.js";
 import { waitForElement } from "./waitForElement.js";
 
@@ -56,6 +57,19 @@ export async function parseJdProductAsync(
   const recSelector = RECOMMENDATION_SELECTORS.container.join(", ");
   await waitForElement(document, recSelector, { timeout: recTimeout });
   const { alternatives, urls: alternativeUrls } = parseRecommendationItems(document, model.title);
+
+  const promoInfo = parsePromotions(document);
+  if (promoInfo.rules.length > 0 || promoInfo.coupons.length > 0) {
+    model.promotions = promoInfo;
+    model.effectivePrice = computeEffectivePrice(model.unitPrice, promoInfo);
+
+    for (const alt of alternatives) {
+      if (alt.sellerType === model.sellerType) {
+        alt.promotions = promoInfo;
+        alt.effectivePrice = computeEffectivePrice(alt.unitPrice, promoInfo);
+      }
+    }
+  }
 
   return { model, alternatives, alternativeUrls, incomplete };
 }
