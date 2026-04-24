@@ -3,12 +3,15 @@ import type {
   CartPageModel,
   CartPlanOutput,
   CartThresholdRule,
+  OptimalTopUp,
 } from "../types/cart.js";
 import type {
   CouponInfo,
   CrossStoreManjianRule,
   DiscountBreakdown,
 } from "../types/product.js";
+
+const MAX_TOP_UP_UNITS = 3;
 
 function formatMoney(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
@@ -156,23 +159,44 @@ function chooseRule(
   });
 }
 
-function chooseCheapestItem(items: CartItem[]): CartItem | null {
-  if (items.length === 0) {
+function findOptimalTopUp(
+  items: CartItem[],
+  gap: number,
+  discount: number,
+): OptimalTopUp | null {
+  if (items.length === 0 || gap <= 0) {
     return null;
   }
 
-  return items.reduce((best, item) => {
-    if (item.unitPrice < best.unitPrice) {
-      return item;
+  let best: OptimalTopUp | null = null;
+  for (const item of items) {
+    for (let units = 1; units <= MAX_TOP_UP_UNITS; units++) {
+      const addedCost = item.unitPrice * units;
+      const overflow = addedCost - gap;
+      if (overflow < 0) continue;
+      const candidate: OptimalTopUp = {
+        item,
+        units,
+        addedCost,
+        overflow,
+        netSaved: discount - overflow,
+      };
+      if (!best || candidate.overflow < best.overflow) {
+        best = candidate;
+      }
+      break;
     }
+  }
 
-    if (item.unitPrice === best.unitPrice && item.quantity < best.quantity) {
-      return item;
-    }
-
-    return best;
-  });
+  if (!best || best.netSaved <= 0) {
+    return null;
+  }
+  return best;
 }
+
+// TODO(PR-future): findRemovalOpportunity — if subtotal already satisfies a
+// rule but overshoots, check whether removing a single item still satisfies
+// the rule for a better net outcome. Rare case; not wired up in this PR.
 
 function attachPricing(
   output: CartPlanOutput,
@@ -211,25 +235,39 @@ export function buildCartPlan(input: CartPageModel): CartPlanOutput {
   }
 
   const gap = selectedRule.threshold - total;
-  const cheapestItem = chooseCheapestItem(input.items);
+  const topUp = findOptimalTopUp(input.items, gap, selectedRule.discount);
 
-  if (!cheapestItem) {
+  if (!topUp) {
+    const cheapestAvailable = input.items.find((item) => item.unitPrice > 0);
+    if (!cheapestAvailable) {
+      return attachPricing(
+        {
+          summary: `再补 ${gap.toFixed(2)} 元可满 ${formatMoney(selectedRule.threshold)} 减 ${formatMoney(selectedRule.discount)}。`,
+          actions: ["先加入 1 件商品凑单"],
+        },
+        pricing,
+      );
+    }
+    // Have items but no economical top-up: warn instead of recommending.
+    const unitsToClear = Math.max(1, Math.ceil(gap / cheapestAvailable.unitPrice));
+    const overflow =
+      cheapestAvailable.unitPrice * unitsToClear - gap;
     return attachPricing(
       {
         summary: `再补 ${gap.toFixed(2)} 元可满 ${formatMoney(selectedRule.threshold)} 减 ${formatMoney(selectedRule.discount)}。`,
-        actions: ["先加入 1 件商品凑单"],
+        actions: [
+          `凑单不划算（多花 ¥${overflow.toFixed(2)} ≥ 省 ¥${formatMoney(selectedRule.discount)}），建议直接结算`,
+        ],
       },
       pricing,
     );
   }
 
-  const neededUnits = Math.max(1, Math.ceil(gap / cheapestItem.unitPrice));
-
   return attachPricing(
     {
       summary: `再补 ${gap.toFixed(2)} 元可满 ${formatMoney(selectedRule.threshold)} 减 ${formatMoney(selectedRule.discount)}。`,
       actions: [
-        `加购 ${neededUnits} 件「${cheapestItem.title}」凑单`,
+        `加购 ${topUp.units} 件「${topUp.item.title}」凑单（多花 ¥${topUp.overflow.toFixed(2)}，净省 ¥${topUp.netSaved.toFixed(2)}）`,
         "保留当前购物车",
       ],
     },

@@ -33,3 +33,19 @@ export type CartPlanOutput = {
   discount?: number | undefined;
   breakdown?: DiscountBreakdown[] | undefined;
 };
+
+export type TopUpCandidate = {
+  title: string;
+  price: number;
+  sourceUrl: string;
+};
+
+export type TopUpProvider = (gap: number) => Promise<TopUpCandidate[]>;
+
+export type OptimalTopUp = {
+  item: CartItem;
+  units: number;
+  addedCost: number;
+  overflow: number;
+  netSaved: number;
+};

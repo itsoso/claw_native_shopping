@@ -25,7 +25,7 @@ describe("buildCartPlan", () => {
     });
 
     expect(plan.summary).toBe("再补 17.10 元可满 59 减 10。");
-    expect(plan.actions).toContain("加购 2 件「抽纸」凑单");
+    expect(plan.actions.some((a) => a.includes("加购 2 件「抽纸」"))).toBe(true);
   });
 
   it("returns the direct checkout branch when the cart already qualifies", () => {
@@ -217,5 +217,73 @@ describe("buildCartPlan", () => {
     expect(plan.effectiveTotal).toBeCloseTo(45);
     expect(plan.discount).toBeCloseTo(5);
     expect(plan.breakdown?.[0]?.type).toBe("coupon");
+  });
+
+  it("picks the item with minimum overflow, not just the cheapest unit", () => {
+    const plan = buildCartPlan({
+      items: [
+        {
+          title: "大件",
+          unitPrice: 30,
+          quantity: 1,
+          sellerType: "marketplace",
+          packageLabel: null,
+        },
+        {
+          title: "小件",
+          unitPrice: 12,
+          quantity: 1,
+          sellerType: "self_operated",
+          packageLabel: null,
+        },
+      ],
+      thresholdRules: [{ threshold: 59, discount: 10 }],
+    });
+
+    // subtotal 42, gap 17
+    // 小件 × 2 = 24 overflow 7 ← winner (smallest)
+    // 大件 × 1 = 30 overflow 13
+    const topUpAction = plan.actions.find((a) => a.includes("凑单"));
+    expect(topUpAction).toContain("加购 2 件「小件」");
+    expect(topUpAction).toContain("多花 ¥7.00");
+    expect(topUpAction).toContain("净省 ¥3.00");
+  });
+
+  it("warns against top-up when overflow would exceed the discount", () => {
+    const plan = buildCartPlan({
+      items: [
+        {
+          title: "大件",
+          unitPrice: 29,
+          quantity: 1,
+          sellerType: "marketplace",
+          packageLabel: null,
+        },
+      ],
+      thresholdRules: [{ threshold: 34, discount: 3 }],
+    });
+
+    // subtotal 29, gap 5
+    // 大件 × 1 = 29 → 新总价 58, overflow 24 > discount 3 → bad deal
+    expect(plan.actions.some((a) => a.includes("凑单不划算"))).toBe(true);
+    expect(plan.actions.some((a) => a.includes("加购"))).toBe(false);
+  });
+
+  it("does not recommend top-up when the cart already qualifies", () => {
+    const plan = buildCartPlan({
+      items: [
+        {
+          title: "A",
+          unitPrice: 60,
+          quantity: 1,
+          sellerType: "marketplace",
+          packageLabel: null,
+        },
+      ],
+      thresholdRules: [{ threshold: 50, discount: 5 }],
+    });
+
+    expect(plan.actions.every((a) => !a.includes("凑单"))).toBe(true);
+    expect(plan.summary).toContain("已满足");
   });
 });
