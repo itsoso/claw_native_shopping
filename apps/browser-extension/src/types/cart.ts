@@ -1,4 +1,9 @@
-import type { SellerType } from "./product.js";
+import type {
+  CouponInfo,
+  CrossStoreManjianRule,
+  DiscountBreakdown,
+  SellerType,
+} from "./product.js";
 
 export type CartItem = {
   title: string;
@@ -6,6 +11,7 @@ export type CartItem = {
   quantity: number;
   sellerType: SellerType;
   packageLabel: string | null;
+  shopId?: string | undefined;
 };
 
 export type CartThresholdRule = {
@@ -16,9 +22,14 @@ export type CartThresholdRule = {
 export type CartPageModel = {
   items: CartItem[];
   thresholdRules: CartThresholdRule[];
+  couponsByShop?: Record<string, CouponInfo[]> | undefined;
+  crossStoreRules?: CrossStoreManjianRule[] | undefined;
 };
 
 export type CartPlanOutput = {
   summary: string;
   actions: string[];
+  effectiveTotal?: number | undefined;
+  discount?: number | undefined;
+  breakdown?: DiscountBreakdown[] | undefined;
 };

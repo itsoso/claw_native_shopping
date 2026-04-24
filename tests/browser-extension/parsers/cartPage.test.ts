@@ -46,4 +46,46 @@ describe("parseJdCartPage", () => {
     expect(result.thresholdRules[1]?.threshold).toBe(199);
     expect(result.thresholdRules[1]?.discount).toBe(50);
   });
+
+  it("extracts shop-level coupons and cross-store rules", () => {
+    const html = `<!doctype html><html><body>
+      <div class="shop-wrap">
+        <div class="shop-info"><span class="shop-name">好物自营</span></div>
+        <div class="item-form">
+          <div class="p-name"><a>A 商品</a></div>
+          <div class="p-price"><strong>100.00</strong></div>
+          <div class="quantity-form"><input value="1" /></div>
+        </div>
+        <div class="shop-coupon">满99减10券</div>
+      </div>
+      <div class="cart-summary">
+        <div>跨店满300减50</div>
+      </div>
+    </body></html>`;
+
+    const result = parseJdCartPage(html);
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.shopId).toBe("好物自营");
+    expect(result.couponsByShop).toBeDefined();
+    expect(result.couponsByShop?.["好物自营"]?.[0]?.value).toBe(10);
+    expect(result.crossStoreRules).toHaveLength(1);
+    expect(result.crossStoreRules?.[0]?.threshold).toBe(300);
+    expect(result.crossStoreRules?.[0]?.discount).toBe(50);
+  });
+
+  it("does not double-count 跨店满X减Y as an in-store manjian rule", () => {
+    const html = `<!doctype html><html><body>
+      <div class="item-form">
+        <div class="p-name"><a>商品</a></div>
+        <div class="p-price"><strong>500.00</strong></div>
+      </div>
+      <div class="prom-main">跨店满300减50</div>
+    </body></html>`;
+
+    const result = parseJdCartPage(html);
+
+    expect(result.thresholdRules).toHaveLength(0);
+    expect(result.crossStoreRules).toHaveLength(1);
+  });
 });

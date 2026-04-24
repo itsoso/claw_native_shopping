@@ -4,6 +4,11 @@ import type {
   CartPlanOutput,
   CartThresholdRule,
 } from "../types/cart.js";
+import type {
+  CouponInfo,
+  CrossStoreManjianRule,
+  DiscountBreakdown,
+} from "../types/product.js";
 
 function formatMoney(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
@@ -11,6 +16,105 @@ function formatMoney(value: number): string {
 
 function getCartTotal(items: CartItem[]): number {
   return items.reduce((total, item) => total + item.unitPrice * item.quantity, 0);
+}
+
+function pickBestManjianRule(
+  subtotal: number,
+  rules: CartThresholdRule[],
+): CartThresholdRule | null {
+  const satisfied = rules.filter((rule) => subtotal >= rule.threshold);
+  if (satisfied.length === 0) return null;
+  return satisfied.reduce((best, rule) =>
+    rule.discount > best.discount ? rule : best,
+  );
+}
+
+function pickBestCrossStoreRule(
+  subtotal: number,
+  rules: CrossStoreManjianRule[] | undefined,
+): CrossStoreManjianRule | null {
+  if (!rules || rules.length === 0) return null;
+  const satisfied = rules.filter((rule) => subtotal >= rule.threshold);
+  if (satisfied.length === 0) return null;
+  return satisfied.reduce((best, rule) =>
+    rule.discount > best.discount ? rule : best,
+  );
+}
+
+function pickBestCoupon(
+  subtotal: number,
+  couponsByShop: Record<string, CouponInfo[]> | undefined,
+): CouponInfo | null {
+  if (!couponsByShop) return null;
+  const flat = Object.values(couponsByShop).flat();
+  const qualified = flat.filter(
+    (c) => c.threshold === 0 || subtotal >= c.threshold,
+  );
+  if (qualified.length === 0) return null;
+  return qualified.reduce((best, coupon) =>
+    coupon.value > best.value ? coupon : best,
+  );
+}
+
+type CartPricing = {
+  subtotal: number;
+  effectiveTotal: number;
+  discount: number;
+  breakdown: DiscountBreakdown[];
+  appliedManjian: CartThresholdRule | null;
+};
+
+function computeCartPricing(input: CartPageModel): CartPricing {
+  const subtotal = getCartTotal(input.items);
+  const breakdown: DiscountBreakdown[] = [];
+  let workingTotal = subtotal;
+
+  const appliedManjian = pickBestManjianRule(subtotal, input.thresholdRules);
+  if (appliedManjian) {
+    workingTotal -= appliedManjian.discount;
+    breakdown.push({
+      type: "manjian",
+      label: `满${formatMoney(appliedManjian.threshold)}减${formatMoney(appliedManjian.discount)}`,
+      amount: appliedManjian.discount,
+      applied: true,
+    });
+  }
+
+  const appliedCrossStore = pickBestCrossStoreRule(subtotal, input.crossStoreRules);
+  if (appliedCrossStore) {
+    workingTotal -= appliedCrossStore.discount;
+    breakdown.push({
+      type: "manjian",
+      label: appliedCrossStore.label,
+      amount: appliedCrossStore.discount,
+      applied: true,
+    });
+  }
+
+  const appliedCoupon = pickBestCoupon(subtotal, input.couponsByShop);
+  if (appliedCoupon) {
+    const stackable = appliedCoupon.stackable ?? true;
+    if (!appliedManjian || stackable) {
+      workingTotal -= appliedCoupon.value;
+      breakdown.push({
+        type: "coupon",
+        label: appliedCoupon.label,
+        amount: appliedCoupon.value,
+        applied: true,
+      });
+    }
+  }
+
+  const effectiveTotal = Math.max(0, workingTotal);
+  const discount = subtotal - effectiveTotal;
+
+  return {
+    subtotal,
+    effectiveTotal,
+    discount,
+    breakdown,
+    appliedManjian,
+  };
 }
 
 function chooseRule(
@@ -70,41 +174,65 @@ function chooseCheapestItem(items: CartItem[]): CartItem | null {
   });
 }
 
+function attachPricing(
+  output: CartPlanOutput,
+  pricing: CartPricing,
+): CartPlanOutput {
+  if (pricing.discount > 0) {
+    output.effectiveTotal = pricing.effectiveTotal;
+    output.discount = pricing.discount;
+  }
+  if (pricing.breakdown.length > 0) {
+    output.breakdown = pricing.breakdown;
+  }
+  return output;
+}
+
 export function buildCartPlan(input: CartPageModel): CartPlanOutput {
-  const total = getCartTotal(input.items);
+  const pricing = computeCartPricing(input);
+  const total = pricing.subtotal;
   const selectedRule = chooseRule(total, input.thresholdRules);
 
   if (!selectedRule) {
-    return {
-      summary: "当前购物车没有可用满减规则，直接结算。",
-      actions: ["直接结算"],
-    };
+    const summary = pricing.discount > 0
+      ? `当前购物车可享优惠 ¥${pricing.discount.toFixed(2)}，直接结算。`
+      : "当前购物车没有可用满减规则，直接结算。";
+    return attachPricing({ summary, actions: ["直接结算"] }, pricing);
   }
 
   if (total >= selectedRule.threshold) {
-    return {
-      summary: `已满足满 ${formatMoney(selectedRule.threshold)} 减 ${formatMoney(selectedRule.discount)}，可以直接结算。`,
-      actions: ["保持当前购物车并结算"],
-    };
+    return attachPricing(
+      {
+        summary: `已满足满 ${formatMoney(selectedRule.threshold)} 减 ${formatMoney(selectedRule.discount)}，可以直接结算。`,
+        actions: ["保持当前购物车并结算"],
+      },
+      pricing,
+    );
   }
 
   const gap = selectedRule.threshold - total;
   const cheapestItem = chooseCheapestItem(input.items);
 
   if (!cheapestItem) {
-    return {
-      summary: `再补 ${gap.toFixed(2)} 元可满 ${formatMoney(selectedRule.threshold)} 减 ${formatMoney(selectedRule.discount)}。`,
-      actions: ["先加入 1 件商品凑单"],
-    };
+    return attachPricing(
+      {
+        summary: `再补 ${gap.toFixed(2)} 元可满 ${formatMoney(selectedRule.threshold)} 减 ${formatMoney(selectedRule.discount)}。`,
+        actions: ["先加入 1 件商品凑单"],
+      },
+      pricing,
+    );
   }
 
   const neededUnits = Math.max(1, Math.ceil(gap / cheapestItem.unitPrice));
 
-  return {
-    summary: `再补 ${gap.toFixed(2)} 元可满 ${formatMoney(selectedRule.threshold)} 减 ${formatMoney(selectedRule.discount)}。`,
-    actions: [
-      `加购 ${neededUnits} 件「${cheapestItem.title}」凑单`,
-      "保留当前购物车",
-    ],
-  };
+  return attachPricing(
+    {
+      summary: `再补 ${gap.toFixed(2)} 元可满 ${formatMoney(selectedRule.threshold)} 减 ${formatMoney(selectedRule.discount)}。`,
+      actions: [
+        `加购 ${neededUnits} 件「${cheapestItem.title}」凑单`,
+        "保留当前购物车",
+      ],
+    },
+    pricing,
+  );
 }

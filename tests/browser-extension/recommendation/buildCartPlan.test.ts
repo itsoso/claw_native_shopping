@@ -51,5 +51,171 @@ describe("buildCartPlan", () => {
 
     expect(plan.summary).toBe("已满足满 40 减 5，可以直接结算。");
     expect(plan.actions).toContain("保持当前购物车并结算");
+    expect(plan.discount).toBe(5);
+    expect(plan.effectiveTotal).toBeCloseTo(36.9);
+  });
+
+  it("does not include discount when rule is not satisfied", () => {
+    const plan = buildCartPlan({
+      items: [
+        {
+          title: "立白洗衣液 2kg",
+          unitPrice: 29.9,
+          quantity: 1,
+          sellerType: "marketplace",
+          packageLabel: "2kg",
+        },
+      ],
+      thresholdRules: [{ threshold: 59, discount: 10 }],
+    });
+
+    expect(plan.discount).toBeUndefined();
+    expect(plan.effectiveTotal).toBeUndefined();
+  });
+
+  it("stacks a qualified coupon on top of the manjian discount", () => {
+    const plan = buildCartPlan({
+      items: [
+        {
+          title: "立白洗衣液 2kg",
+          unitPrice: 29.9,
+          quantity: 1,
+          sellerType: "marketplace",
+          packageLabel: "2kg",
+        },
+        {
+          title: "抽纸",
+          unitPrice: 12,
+          quantity: 1,
+          sellerType: "self_operated",
+          packageLabel: "3包",
+        },
+      ],
+      thresholdRules: [{ threshold: 40, discount: 5 }],
+      couponsByShop: {
+        "__default__": [{ value: 10, threshold: 30, label: "满30减10券" }],
+      },
+    });
+
+    // subtotal 41.9, manjian -5, coupon -10 → effectiveTotal 26.9
+    expect(plan.effectiveTotal).toBeCloseTo(26.9);
+    expect(plan.discount).toBeCloseTo(15);
+    const types = plan.breakdown?.map((b) => b.type) ?? [];
+    expect(types).toContain("manjian");
+    expect(types).toContain("coupon");
+  });
+
+  it("respects coupon.stackable=false and only applies the manjian", () => {
+    const plan = buildCartPlan({
+      items: [
+        {
+          title: "立白洗衣液 2kg",
+          unitPrice: 29.9,
+          quantity: 1,
+          sellerType: "marketplace",
+          packageLabel: "2kg",
+        },
+      ],
+      thresholdRules: [{ threshold: 20, discount: 3 }],
+      couponsByShop: {
+        "__default__": [
+          { value: 5, threshold: 0, label: "5元券", stackable: false },
+        ],
+      },
+    });
+
+    // subtotal 29.9, manjian -3, coupon blocked → effectiveTotal 26.9
+    expect(plan.effectiveTotal).toBeCloseTo(26.9);
+    expect(plan.discount).toBeCloseTo(3);
+    const types = plan.breakdown?.map((b) => b.type) ?? [];
+    expect(types).toEqual(["manjian"]);
+  });
+
+  it("applies cross-store rule on top of in-store manjian when threshold met", () => {
+    const plan = buildCartPlan({
+      items: [
+        {
+          title: "A 商品",
+          unitPrice: 180,
+          quantity: 1,
+          sellerType: "marketplace",
+          packageLabel: null,
+        },
+        {
+          title: "B 商品",
+          unitPrice: 150,
+          quantity: 1,
+          sellerType: "self_operated",
+          packageLabel: null,
+        },
+      ],
+      thresholdRules: [{ threshold: 200, discount: 20 }],
+      crossStoreRules: [
+        {
+          type: "cross_store_manjian",
+          threshold: 300,
+          discount: 50,
+          label: "跨店满300减50",
+          stackableWithCoupon: true,
+        },
+      ],
+    });
+
+    // subtotal 330, manjian -20, cross-store -50 → 260
+    expect(plan.effectiveTotal).toBeCloseTo(260);
+    expect(plan.discount).toBeCloseTo(70);
+    const labels = plan.breakdown?.map((b) => b.label) ?? [];
+    expect(labels).toContain("满200减20");
+    expect(labels).toContain("跨店满300减50");
+  });
+
+  it("does not apply cross-store rule when subtotal below its threshold", () => {
+    const plan = buildCartPlan({
+      items: [
+        {
+          title: "A",
+          unitPrice: 100,
+          quantity: 1,
+          sellerType: "marketplace",
+          packageLabel: null,
+        },
+      ],
+      thresholdRules: [],
+      crossStoreRules: [
+        {
+          type: "cross_store_manjian",
+          threshold: 300,
+          discount: 50,
+          label: "跨店满300减50",
+          stackableWithCoupon: true,
+        },
+      ],
+    });
+
+    expect(plan.discount).toBeUndefined();
+    expect(plan.effectiveTotal).toBeUndefined();
+  });
+
+  it("includes a breakdown even when there is no manjian rule but a coupon applies", () => {
+    const plan = buildCartPlan({
+      items: [
+        {
+          title: "A",
+          unitPrice: 50,
+          quantity: 1,
+          sellerType: "marketplace",
+          packageLabel: null,
+        },
+      ],
+      thresholdRules: [],
+      couponsByShop: {
+        "__default__": [{ value: 5, threshold: 0, label: "5元券" }],
+      },
+    });
+
+    expect(plan.summary).toContain("直接结算");
+    expect(plan.effectiveTotal).toBeCloseTo(45);
+    expect(plan.discount).toBeCloseTo(5);
+    expect(plan.breakdown?.[0]?.type).toBe("coupon");
   });
 });
