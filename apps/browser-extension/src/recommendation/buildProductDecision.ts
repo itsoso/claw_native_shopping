@@ -1,6 +1,9 @@
 import type { PriceHistoryInfo, ProductPageModel } from "../types/product.js";
 import type { DecisionPreferences } from "../types/preferences.js";
 import type {
+  AlternativeComparison,
+  DecisionExplanation,
+  DecisionFactor,
   ProductDecisionInput,
   ProductDecisionOutput,
 } from "../types/recommendation.js";
@@ -33,7 +36,8 @@ function sellerScore(product: ProductPageModel): number {
 
 function scoreByMode(product: ProductPageModel, mode: DecisionPreferences["mode"]): number {
   if (mode === "value") {
-    return -product.unitPrice;
+    const price = product.effectivePrice ?? product.unitPrice;
+    return -price;
   }
 
   const deliveryScore = deliveryRank(product.deliveryEta);
@@ -67,7 +71,10 @@ function describeReason(
   const trend = describeTrend(priceHistory);
 
   if (mode === "value") {
-    return `${seller}，单价 ${product.unitPrice.toFixed(2)} 元${trend}，更划算`;
+    const promoNote = product.effectivePrice != null
+      ? `，到手价 ${product.effectivePrice.toFixed(2)} 元`
+      : "";
+    return `${seller}，标价 ${product.unitPrice.toFixed(2)} 元${promoNote}${trend}，更划算`;
   }
 
   if (mode === "safe") {
@@ -88,6 +95,101 @@ function buildPrimaryAction(
   return `建议改选${describeSeller(chosen)}：${chosen.title}`;
 }
 
+function priceFactor(product: ProductPageModel): DecisionFactor {
+  if (product.effectivePrice != null && product.effectivePrice < product.unitPrice) {
+    return {
+      kind: "price",
+      label: `到手价 ¥${product.effectivePrice.toFixed(2)}`,
+      detail: `标价 ¥${product.unitPrice.toFixed(2)}`,
+    };
+  }
+  return {
+    kind: "price",
+    label: `标价 ¥${product.unitPrice.toFixed(2)}`,
+  };
+}
+
+function sellerFactor(product: ProductPageModel): DecisionFactor {
+  return {
+    kind: "seller",
+    label: product.sellerType === "self_operated" ? "京东自营" : "商家配送",
+  };
+}
+
+function deliveryFactorOrNull(product: ProductPageModel): DecisionFactor | null {
+  if (!product.deliveryEta) return null;
+  return { kind: "delivery", label: product.deliveryEta };
+}
+
+function priceHistoryFactorOrNull(
+  priceHistory: PriceHistoryInfo | undefined,
+): DecisionFactor | null {
+  if (!priceHistory) return null;
+  if (priceHistory.trend === "low") {
+    return {
+      kind: "price_history",
+      label: "近 30 天低价",
+      detail: `当前 ¥${priceHistory.currentPrice.toFixed(2)}，历史最低 ¥${priceHistory.lowestPrice.toFixed(2)}`,
+    };
+  }
+  if (priceHistory.trend === "high") {
+    return {
+      kind: "price_history",
+      label: "近期价格偏高",
+      detail: `30 天均价 ¥${priceHistory.averagePrice.toFixed(2)}`,
+    };
+  }
+  return { kind: "price_history", label: "近期价格平稳" };
+}
+
+function promotionFactorOrNull(product: ProductPageModel): DecisionFactor | null {
+  const breakdown = product.effectivePriceBreakdown;
+  if (!breakdown || breakdown.length === 0) return null;
+  const applied = breakdown.filter((b) => b.applied);
+  if (applied.length === 0) return null;
+  const totalSaved = applied.reduce((sum, b) => sum + b.amount, 0);
+  const labels = applied.map((b) => b.label).join(" + ");
+  return {
+    kind: "promotion",
+    label: `促销合计省 ¥${totalSaved.toFixed(2)}`,
+    detail: labels,
+  };
+}
+
+function buildFactors(
+  chosen: ProductPageModel,
+  isCurrentChosen: boolean,
+  priceHistory: PriceHistoryInfo | undefined,
+): DecisionFactor[] {
+  const factors: DecisionFactor[] = [priceFactor(chosen), sellerFactor(chosen)];
+  const delivery = deliveryFactorOrNull(chosen);
+  if (delivery) factors.push(delivery);
+  if (isCurrentChosen) {
+    const history = priceHistoryFactorOrNull(priceHistory);
+    if (history) factors.push(history);
+  }
+  const promo = promotionFactorOrNull(chosen);
+  if (promo) factors.push(promo);
+  return factors;
+}
+
+function buildAlternativeComparisons(
+  chosen: ProductPageModel,
+  candidates: ProductPageModel[],
+): AlternativeComparison[] {
+  return candidates
+    .filter((c) => c !== chosen)
+    .map((alt) => ({
+      title: alt.title,
+      priceDelta:
+        (chosen.effectivePrice ?? chosen.unitPrice) -
+        (alt.effectivePrice ?? alt.unitPrice),
+      deliveryDelta:
+        deliveryRank(chosen.deliveryEta) - deliveryRank(alt.deliveryEta),
+      sameSellerType: chosen.sellerType === alt.sellerType,
+    }));
+}
+
 export function buildProductDecision(
   input: ProductDecisionInput,
   preferences: DecisionPreferences,
@@ -101,12 +203,20 @@ export function buildProductDecision(
     return candidateScore > bestScore ? candidate : best;
   }, input.current);
 
-  const chosenHistory = chosen === input.current ? input.priceHistory : undefined;
+  const isCurrentChosen = chosen === input.current;
+  const chosenHistory = isCurrentChosen ? input.priceHistory : undefined;
+
+  const explanation: DecisionExplanation = {
+    mode: preferences.mode,
+    factors: buildFactors(chosen, isCurrentChosen, input.priceHistory),
+    alternatives: buildAlternativeComparisons(chosen, candidates),
+  };
 
   return {
     mode: preferences.mode,
     chosen,
     primaryAction: buildPrimaryAction(input.current, chosen),
     reason: describeReason(chosen, preferences.mode, chosenHistory),
+    explanation,
   };
 }
