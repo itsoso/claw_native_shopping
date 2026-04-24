@@ -123,4 +123,33 @@ describe("DecisionCard", () => {
 
     expect(screen.queryByText("推荐依据")).toBeNull();
   });
+
+  it("renders the auto-mode hint when autoModeHint is provided", () => {
+    render(
+      <DecisionCard
+        primaryAction="保留当前商品"
+        reason="自营，明天送达"
+        mode="safe"
+        onModeChange={vi.fn()}
+        autoModeHint="你最近常看京东自营，推荐「更稳妥」"
+      />,
+    );
+
+    expect(
+      screen.getByText("你最近常看京东自营，推荐「更稳妥」"),
+    ).toBeTruthy();
+  });
+
+  it("does not render an auto-mode hint when autoModeHint is absent", () => {
+    const { container } = render(
+      <DecisionCard
+        primaryAction="保留当前商品"
+        reason="自营，明天送达"
+        mode="safe"
+        onModeChange={vi.fn()}
+      />,
+    );
+
+    expect(container.textContent).not.toContain("推荐「更稳妥」");
+  });
 });

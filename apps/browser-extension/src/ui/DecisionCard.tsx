@@ -28,6 +28,7 @@ export type DecisionCardProps = {
   effectivePrice?: number | undefined;
   explanation?: DecisionExplanation | undefined;
   showExplanation?: boolean | undefined;
+  autoModeHint?: string | undefined;
 };
 
 const cardStyle: CSSProperties = {
@@ -98,6 +99,14 @@ const buttonStyle: CSSProperties = {
     "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease"
 };
 
+const autoHintStyle: CSSProperties = {
+  margin: "0 0 10px",
+  fontSize: "12px",
+  lineHeight: 1.45,
+  color: "#8b5d20",
+  fontStyle: "italic",
+};
+
 export function DecisionCard({
   primaryAction,
   reason,
@@ -111,6 +120,7 @@ export function DecisionCard({
   effectivePrice,
   explanation,
   showExplanation,
+  autoModeHint,
 }: DecisionCardProps) {
   return (
     <section aria-label="OpenClaw shopping decision" style={cardStyle}>
@@ -119,6 +129,7 @@ export function DecisionCard({
       {mode && onModeChange ? (
         <PreferenceMode value={mode} onChange={onModeChange} />
       ) : null}
+      {autoModeHint ? <p style={autoHintStyle}>{autoModeHint}</p> : null}
       <h2 style={primaryStyle}>{primaryAction}</h2>
       {verification ? (
         <VerificationBadge

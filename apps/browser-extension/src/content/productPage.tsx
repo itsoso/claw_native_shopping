@@ -9,7 +9,7 @@ import { requestPriceHistory } from "../parsers/fetchPriceHistory.js";
 import { buildProductDecision } from "../recommendation/buildProductDecision.js";
 import { fetchVerification } from "../recommendation/fetchVerification.js";
 import { recordEvent } from "../storage/events.js";
-import { loadPreferences, savePreferences } from "../storage/preferences.js";
+import { getEffectiveMode, savePreferences } from "../storage/preferences.js";
 import { addSavingsRecord } from "../storage/savingsRecords.js";
 import { recordViewedProduct } from "../storage/viewedProducts.js";
 import type { ProductPageEventType } from "../types/events.js";
@@ -73,6 +73,7 @@ export function ProductPagePanel() {
   const [priceHistory, setPriceHistory] = useState<PriceHistoryInfo | null>(null);
   const [showComparison, setShowComparison] = useState(false);
   const [reasonExpanded, setReasonExpanded] = useState(false);
+  const [autoModeHint, setAutoModeHint] = useState<string | null>(null);
   const [watching, setWatching] = useState(false);
 
   const runParse = useCallback(() => {
@@ -109,12 +110,14 @@ export function ProductPagePanel() {
   useEffect(() => {
     let active = true;
 
-    void loadPreferences()
-      .then((preferences) => {
-        if (active) {
-          setMode(preferences.mode);
-          recordProductEvent("recommendation_shown", preferences.mode);
+    void getEffectiveMode()
+      .then((effective) => {
+        if (!active) return;
+        setMode(effective.mode);
+        if (effective.auto) {
+          setAutoModeHint(effective.autoReason);
         }
+        recordProductEvent("recommendation_shown", effective.mode);
       })
       .catch(() => {
         if (active) {
@@ -228,6 +231,7 @@ export function ProductPagePanel() {
 
   const handleModeChange = (nextMode: DecisionMode) => {
     setMode(nextMode);
+    setAutoModeHint(null);
     void savePreferences({ mode: nextMode }).catch(() => undefined);
     recordProductEvent("preference_changed", nextMode);
   };
@@ -363,6 +367,7 @@ export function ProductPagePanel() {
         effectivePrice={parseResult.model.effectivePrice}
         explanation={decision!.explanation}
         showExplanation={reasonExpanded}
+        autoModeHint={autoModeHint ?? undefined}
       />
       {showComparison && hasAlternatives ? (
         <ComparisonTable

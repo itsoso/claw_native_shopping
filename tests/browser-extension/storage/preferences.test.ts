@@ -70,6 +70,7 @@ const browserContext = vi.hoisted(() => {
 });
 
 import {
+  getEffectiveMode,
   loadPreferences,
   savePreferences,
 } from "../../../apps/browser-extension/src/storage/preferences.js";
@@ -103,6 +104,31 @@ describe("preferences storage", () => {
     expect(browserContext.area.set).toHaveBeenCalledWith({
       "decision-mode": "value",
     });
+  });
+
+  it("returns stored mode with auto=false when an explicit mode is saved", async () => {
+    browserContext.storageState.set("decision-mode", "value");
+
+    const effective = await getEffectiveMode();
+
+    expect(effective).toEqual({ mode: "value", auto: false, autoReason: null });
+  });
+
+  it("infers a mode and surfaces the reason when nothing is stored", async () => {
+    // Seed 5 self-operated views into the viewed-products store to trigger `safe`.
+    browserContext.storageState.set("viewed-products", [
+      { skuId: "1", title: "a", unitPrice: 10, sellerType: "self_operated", url: "", viewedAt: 1 },
+      { skuId: "2", title: "b", unitPrice: 10, sellerType: "self_operated", url: "", viewedAt: 2 },
+      { skuId: "3", title: "c", unitPrice: 10, sellerType: "self_operated", url: "", viewedAt: 3 },
+      { skuId: "4", title: "d", unitPrice: 10, sellerType: "self_operated", url: "", viewedAt: 4 },
+      { skuId: "5", title: "e", unitPrice: 10, sellerType: "self_operated", url: "", viewedAt: 5 },
+    ]);
+
+    const effective = await getEffectiveMode();
+
+    expect(effective.mode).toBe("safe");
+    expect(effective.auto).toBe(true);
+    expect(effective.autoReason).toContain("自营");
   });
 });
 
