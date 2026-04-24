@@ -2,6 +2,7 @@ import { PRODUCT_SELECTORS, queryFirst } from "../config/selectors.js";
 import type {
   CouponInfo,
   CrossStoreManjianRule,
+  DiscountBreakdown,
   ManzheRule,
   PlusPrice,
   PromotionInfo,
@@ -216,26 +217,133 @@ export function parsePlusPrice(root: ParentNode): PlusPrice | undefined {
   return { value, label: `PLUS会员价 ¥${value}` };
 }
 
+export type ComputeEffectivePriceOptions = {
+  isPlus?: boolean | undefined;
+};
+
+export type ComputeEffectivePriceResult = {
+  price: number;
+  breakdown: DiscountBreakdown[];
+};
+
+function selectBestManjian(
+  basis: number,
+  rules: PromotionRule[],
+): PromotionRule | null {
+  let best: PromotionRule | null = null;
+  for (const rule of rules) {
+    if (basis >= rule.threshold && (!best || rule.discount > best.discount)) {
+      best = rule;
+    }
+  }
+  return best;
+}
+
+function selectBestCoupon(
+  basis: number,
+  coupons: CouponInfo[],
+): CouponInfo | null {
+  let best: CouponInfo | null = null;
+  for (const coupon of coupons) {
+    const qualifies = coupon.threshold === 0 || basis >= coupon.threshold;
+    if (qualifies && (!best || coupon.value > best.value)) {
+      best = coupon;
+    }
+  }
+  return best;
+}
+
+export function computeEffectivePriceWithBreakdown(
+  unitPrice: number,
+  info: PromotionInfo,
+  opts?: ComputeEffectivePriceOptions,
+): ComputeEffectivePriceResult {
+  const breakdown: DiscountBreakdown[] = [];
+  let workingPrice = unitPrice;
+
+  if (opts?.isPlus && info.plusPrice && info.plusPrice.value < workingPrice) {
+    const saved = workingPrice - info.plusPrice.value;
+    breakdown.push({
+      type: "plus",
+      label: info.plusPrice.label,
+      amount: saved,
+      applied: true,
+    });
+    workingPrice = info.plusPrice.value;
+  }
+
+  // Thresholds for manjian and coupons use the sticker basis (after PLUS).
+  // Discounts then subtract sequentially. Coupons default to stackable unless
+  // explicitly set false.
+  const basis = workingPrice;
+
+  const bestManjian = selectBestManjian(basis, info.rules);
+  if (bestManjian) {
+    breakdown.push({
+      type: "manjian",
+      label: bestManjian.label,
+      amount: bestManjian.discount,
+      applied: true,
+    });
+    workingPrice -= bestManjian.discount;
+  }
+
+  const bestCoupon = selectBestCoupon(basis, info.coupons);
+  if (bestCoupon) {
+    const stackable = bestCoupon.stackable ?? true;
+    if (!bestManjian || stackable) {
+      breakdown.push({
+        type: "coupon",
+        label: bestCoupon.label,
+        amount: bestCoupon.value,
+        applied: true,
+      });
+      workingPrice -= bestCoupon.value;
+    }
+  }
+
+  for (const rule of info.manzheRules ?? []) {
+    const saved = unitPrice * (1 - rule.discountRate);
+    if (saved > 0) {
+      breakdown.push({
+        type: "manzhe_potential",
+        label: rule.label,
+        amount: saved,
+        applied: false,
+      });
+    }
+  }
+
+  for (const rule of info.secondHalfRules ?? []) {
+    const saved = (unitPrice * (1 - rule.discountRate)) / 2;
+    if (saved > 0) {
+      breakdown.push({
+        type: "second_half_potential",
+        label: rule.label,
+        amount: saved,
+        applied: false,
+      });
+    }
+  }
+
+  return {
+    price: Math.max(0, workingPrice),
+    breakdown,
+  };
+}
+
+/**
+ * @deprecated Prefer `computeEffectivePriceWithBreakdown` which returns the
+ * full discount breakdown. This wrapper is kept for callers that only need the
+ * final price.
+ *
+ * Note: the returned price now reflects stacked discounts (manjian + coupon)
+ * instead of the previous best-single-discount behavior.
+ */
 export function computeEffectivePrice(
   unitPrice: number,
   info: PromotionInfo,
+  opts?: ComputeEffectivePriceOptions,
 ): number {
-  let bestDiscount = 0;
-
-  for (const rule of info.rules) {
-    if (unitPrice >= rule.threshold && rule.discount > bestDiscount) {
-      bestDiscount = rule.discount;
-    }
-  }
-
-  for (const coupon of info.coupons) {
-    if (
-      (coupon.threshold === 0 || unitPrice >= coupon.threshold) &&
-      coupon.value > bestDiscount
-    ) {
-      bestDiscount = coupon.value;
-    }
-  }
-
-  return Math.max(0, unitPrice - bestDiscount);
+  return computeEffectivePriceWithBreakdown(unitPrice, info, opts).price;
 }

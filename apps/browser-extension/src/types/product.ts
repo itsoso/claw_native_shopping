@@ -52,6 +52,20 @@ export type PromotionInfo = {
   plusPrice?: PlusPrice | undefined;
 };
 
+export type DiscountBreakdownType =
+  | "plus"
+  | "manjian"
+  | "coupon"
+  | "manzhe_potential"
+  | "second_half_potential";
+
+export type DiscountBreakdown = {
+  type: DiscountBreakdownType;
+  label: string;
+  amount: number;
+  applied: boolean;
+};
+
 export type ProductPageModel = {
   title: string;
   unitPrice: number;
@@ -60,6 +74,7 @@ export type ProductPageModel = {
   packageLabel: string | null;
   promotions?: PromotionInfo | undefined;
   effectivePrice?: number | undefined;
+  effectivePriceBreakdown?: DiscountBreakdown[] | undefined;
 };
 
 export type PriceTrend = "low" | "average" | "high";

@@ -3,6 +3,7 @@ import { DOMParser } from "linkedom";
 
 import {
   computeEffectivePrice,
+  computeEffectivePriceWithBreakdown,
   parseCoupons,
   parseCrossStoreRules,
   parseManzheRules,
@@ -151,7 +152,7 @@ describe("computeEffectivePrice", () => {
     expect(computeEffectivePrice(50, info)).toBe(50);
   });
 
-  it("applies coupon when better than manjian", () => {
+  it("stacks coupon on top of manjian rule", () => {
     const info = {
       rules: [
         { type: "manjian" as const, threshold: 99, discount: 10, label: "满99减10" },
@@ -161,7 +162,7 @@ describe("computeEffectivePrice", () => {
       ],
     };
 
-    expect(computeEffectivePrice(100, info)).toBe(75);
+    expect(computeEffectivePrice(100, info)).toBe(65);
   });
 
   it("applies no-threshold coupon", () => {
@@ -336,5 +337,180 @@ describe("parsePromotions with new variants", () => {
     expect(info.secondHalfRules).toBeUndefined();
     expect(info.crossStoreRules).toBeUndefined();
     expect(info.plusPrice).toBeUndefined();
+  });
+});
+
+describe("computeEffectivePriceWithBreakdown", () => {
+  it("stacks best manjian with best coupon by default", () => {
+    const info = {
+      rules: [
+        { type: "manjian" as const, threshold: 99, discount: 10, label: "满99减10" },
+      ],
+      coupons: [{ value: 25, threshold: 99, label: "满99减25券" }],
+    };
+
+    const result = computeEffectivePriceWithBreakdown(100, info);
+    expect(result.price).toBe(65);
+    expect(result.breakdown).toEqual([
+      { type: "manjian", label: "满99减10", amount: 10, applied: true },
+      { type: "coupon", label: "满99减25券", amount: 25, applied: true },
+    ]);
+  });
+
+  it("does not stack when coupon.stackable is false", () => {
+    const info = {
+      rules: [
+        { type: "manjian" as const, threshold: 99, discount: 10, label: "满99减10" },
+      ],
+      coupons: [
+        { value: 25, threshold: 99, label: "满99减25券", stackable: false },
+      ],
+    };
+
+    const result = computeEffectivePriceWithBreakdown(100, info);
+    expect(result.price).toBe(90);
+    expect(result.breakdown.map((b) => b.type)).toEqual(["manjian"]);
+  });
+
+  it("applies coupon alone when no manjian qualifies", () => {
+    const info = {
+      rules: [
+        { type: "manjian" as const, threshold: 999, discount: 100, label: "满999减100" },
+      ],
+      coupons: [{ value: 5, threshold: 0, label: "5元券" }],
+    };
+
+    const result = computeEffectivePriceWithBreakdown(30, info);
+    expect(result.price).toBe(25);
+    expect(result.breakdown.length).toBe(1);
+    expect(result.breakdown[0]!.type).toBe("coupon");
+  });
+
+  it("picks the best manjian when multiple qualify", () => {
+    const info = {
+      rules: [
+        { type: "manjian" as const, threshold: 99, discount: 10, label: "满99减10" },
+        { type: "manjian" as const, threshold: 199, discount: 50, label: "满199减50" },
+      ],
+      coupons: [],
+    };
+
+    const result = computeEffectivePriceWithBreakdown(250, info);
+    expect(result.price).toBe(200);
+    expect(result.breakdown[0]!.label).toBe("满199减50");
+  });
+
+  it("PLUS price overrides unitPrice then subsequent promos apply on top", () => {
+    const info = {
+      rules: [
+        { type: "manjian" as const, threshold: 150, discount: 20, label: "满150减20" },
+      ],
+      coupons: [],
+      plusPrice: { value: 180, label: "PLUS会员价 ¥180" },
+    };
+
+    const result = computeEffectivePriceWithBreakdown(220, info, { isPlus: true });
+    expect(result.price).toBe(160);
+    expect(result.breakdown.map((b) => b.type)).toEqual(["plus", "manjian"]);
+    expect(result.breakdown[0]!.amount).toBe(40);
+  });
+
+  it("skips PLUS when isPlus is not set", () => {
+    const info = {
+      rules: [],
+      coupons: [],
+      plusPrice: { value: 180, label: "PLUS会员价 ¥180" },
+    };
+
+    const result = computeEffectivePriceWithBreakdown(220, info);
+    expect(result.price).toBe(220);
+    expect(result.breakdown).toEqual([]);
+  });
+
+  it("lists manzhe rules as unapplied potential savings", () => {
+    const info = {
+      rules: [],
+      coupons: [],
+      manzheRules: [
+        {
+          type: "manzhe" as const,
+          thresholdQuantity: 3,
+          discountRate: 0.8,
+          label: "满3件8折",
+          stackableWithCoupon: false,
+        },
+      ],
+    };
+
+    const result = computeEffectivePriceWithBreakdown(100, info);
+    expect(result.price).toBe(100);
+    const potential = result.breakdown.filter((b) => !b.applied);
+    expect(potential.length).toBe(1);
+    expect(potential[0]!.type).toBe("manzhe_potential");
+    expect(potential[0]!.amount).toBeCloseTo(20);
+  });
+
+  it("lists second_half rules as unapplied potential (per-unit saving = half discount)", () => {
+    const info = {
+      rules: [],
+      coupons: [],
+      secondHalfRules: [
+        {
+          type: "second_half" as const,
+          discountRate: 0.5,
+          label: "第二件半价",
+          stackableWithCoupon: false,
+        },
+      ],
+    };
+
+    const result = computeEffectivePriceWithBreakdown(100, info);
+    expect(result.price).toBe(100);
+    const potential = result.breakdown.filter((b) => !b.applied);
+    expect(potential[0]!.type).toBe("second_half_potential");
+    expect(potential[0]!.amount).toBe(25);
+  });
+
+  it("ignores cross_store rules for single-item effective price", () => {
+    const info = {
+      rules: [],
+      coupons: [],
+      crossStoreRules: [
+        {
+          type: "cross_store_manjian" as const,
+          threshold: 300,
+          discount: 50,
+          label: "跨店满300减50",
+          stackableWithCoupon: true,
+        },
+      ],
+    };
+
+    const result = computeEffectivePriceWithBreakdown(400, info);
+    expect(result.price).toBe(400);
+    expect(result.breakdown).toEqual([]);
+  });
+
+  it("never returns below zero even when coupon exceeds unitPrice", () => {
+    const info = {
+      rules: [],
+      coupons: [{ value: 100, threshold: 0, label: "100元券" }],
+    };
+
+    const result = computeEffectivePriceWithBreakdown(50, info);
+    expect(result.price).toBe(0);
+  });
+
+  it("returns unitPrice with empty breakdown when no promos apply", () => {
+    const info = {
+      rules: [
+        { type: "manjian" as const, threshold: 999, discount: 100, label: "满999减100" },
+      ],
+      coupons: [],
+    };
+
+    const result = computeEffectivePriceWithBreakdown(100, info);
+    expect(result.price).toBe(100);
+    expect(result.breakdown).toEqual([]);
   });
 });

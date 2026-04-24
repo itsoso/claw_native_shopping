@@ -2,7 +2,10 @@ import { PRODUCT_SELECTORS, parseNumber, textOf } from "../config/selectors.js";
 import { RECOMMENDATION_SELECTORS } from "../config/selectors.js";
 import type { ProductPageModel } from "../types/product.js";
 import { parseJdProductDocument } from "./productPage.js";
-import { computeEffectivePrice, parsePromotions } from "./promotionParser.js";
+import {
+  computeEffectivePriceWithBreakdown,
+  parsePromotions,
+} from "./promotionParser.js";
 import { parseRecommendationItems } from "./recommendationParser.js";
 import { waitForElement } from "./waitForElement.js";
 
@@ -59,14 +62,35 @@ export async function parseJdProductAsync(
   const { alternatives, urls: alternativeUrls } = parseRecommendationItems(document, model.title);
 
   const promoInfo = parsePromotions(document);
-  if (promoInfo.rules.length > 0 || promoInfo.coupons.length > 0) {
+  const hasAny =
+    promoInfo.rules.length > 0 ||
+    promoInfo.coupons.length > 0 ||
+    (promoInfo.manzheRules?.length ?? 0) > 0 ||
+    (promoInfo.secondHalfRules?.length ?? 0) > 0 ||
+    promoInfo.plusPrice !== undefined;
+
+  if (hasAny) {
     model.promotions = promoInfo;
-    model.effectivePrice = computeEffectivePrice(model.unitPrice, promoInfo);
+    const current = computeEffectivePriceWithBreakdown(
+      model.unitPrice,
+      promoInfo,
+    );
+    model.effectivePrice = current.price;
+    if (current.breakdown.length > 0) {
+      model.effectivePriceBreakdown = current.breakdown;
+    }
 
     for (const alt of alternatives) {
       if (alt.sellerType === model.sellerType) {
         alt.promotions = promoInfo;
-        alt.effectivePrice = computeEffectivePrice(alt.unitPrice, promoInfo);
+        const altResult = computeEffectivePriceWithBreakdown(
+          alt.unitPrice,
+          promoInfo,
+        );
+        alt.effectivePrice = altResult.price;
+        if (altResult.breakdown.length > 0) {
+          alt.effectivePriceBreakdown = altResult.breakdown;
+        }
       }
     }
   }
