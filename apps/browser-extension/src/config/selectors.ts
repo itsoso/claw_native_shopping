@@ -7,6 +7,9 @@ export const PRODUCT_SELECTORS = {
   sellerInfo: [".seller-info"],
   delivery: [".summary-delivery", ".delivery"],
   packageInfo: [".Ptable", ".package-info"],
+  promotion: [".summary-promotion", ".p-prom", "[data-promotion]"],
+  coupon: [".summary-quan", ".quan-item", ".J-quan", "[data-coupon]"],
+  plusPrice: [".plus-price", ".Plus_Price", "[data-plus-price]"],
 } as const;
 
 export const RECOMMENDATION_SELECTORS = {
@@ -30,6 +33,17 @@ export const CART_SELECTORS = {
   itemQuantity: [".quantity-form input", ".quantity"],
   itemSelfBadge: [".u-jd", ".icon-self-run"],
   promotionRule: [".prom-main", "[data-threshold-rule]"],
+} as const;
+
+export const SEARCH_SELECTORS = {
+  container: [".J_goodsList", "#J_goodsList", ".goods-list-v2"],
+  item: [".gl-item", ".J_goodsList .gl-item"],
+  itemName: [".p-name a em", ".p-name a", ".p-name em"],
+  itemPrice: [".p-price strong i", ".p-price i", ".p-price strong"],
+  itemShop: [".p-shop a", ".p-shop span", ".p-shop"],
+  itemSelfBadge: [".p-icons .u-jd", ".u-jd", ".p-icons .goods-icon-self"],
+  itemLink: [".p-name a[href]", ".p-img a[href]"],
+  itemPromotion: [".p-promotionNew", ".p-commit", ".p-promotion", "[data-promotion]"],
 } as const;
 
 export function queryFirst(

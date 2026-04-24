@@ -5,17 +5,51 @@ export type PromotionRule = {
   threshold: number;
   discount: number;
   label: string;
+  stackableWithCoupon?: boolean | undefined;
 };
 
 export type CouponInfo = {
   value: number;
   threshold: number;
   label: string;
+  stackable?: boolean | undefined;
+};
+
+export type ManzheRule = {
+  type: "manzhe";
+  thresholdQuantity: number;
+  discountRate: number;
+  label: string;
+  stackableWithCoupon?: boolean | undefined;
+};
+
+export type SecondHalfRule = {
+  type: "second_half";
+  discountRate: number;
+  label: string;
+  stackableWithCoupon?: boolean | undefined;
+};
+
+export type CrossStoreManjianRule = {
+  type: "cross_store_manjian";
+  threshold: number;
+  discount: number;
+  label: string;
+  stackableWithCoupon?: boolean | undefined;
+};
+
+export type PlusPrice = {
+  value: number;
+  label: string;
 };
 
 export type PromotionInfo = {
   rules: PromotionRule[];
   coupons: CouponInfo[];
+  manzheRules?: ManzheRule[] | undefined;
+  secondHalfRules?: SecondHalfRule[] | undefined;
+  crossStoreRules?: CrossStoreManjianRule[] | undefined;
+  plusPrice?: PlusPrice | undefined;
 };
 
 export type ProductPageModel = {
