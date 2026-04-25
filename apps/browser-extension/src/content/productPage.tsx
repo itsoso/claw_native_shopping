@@ -10,10 +10,16 @@ import { buildProductDecision } from "../recommendation/buildProductDecision.js"
 import { fetchVerification } from "../recommendation/fetchVerification.js";
 import { recordEvent } from "../storage/events.js";
 import { getEffectiveMode, savePreferences } from "../storage/preferences.js";
+import {
+  dismissPriceDrop,
+  readActivePriceDrops,
+} from "../storage/priceDrops.js";
+import { markPurchased } from "../storage/purchasedProducts.js";
 import { addSavingsRecord } from "../storage/savingsRecords.js";
 import { recordViewedProduct } from "../storage/viewedProducts.js";
 import type { ProductPageEventType } from "../types/events.js";
 import type { DecisionMode } from "../types/preferences.js";
+import type { PriceDrop } from "../types/priceDrop.js";
 import type {
   ProductDecisionOutput,
   ProductDecisionProps,
@@ -25,6 +31,7 @@ import { ComparisonTable } from "../ui/ComparisonTable.js";
 import { DecisionCard } from "../ui/DecisionCard.js";
 import type { DecisionCardAction } from "../ui/DecisionCard.js";
 import { ParserStatusCard } from "../ui/ParserStatusCard.js";
+import { PriceDropDialog } from "../ui/PriceDropDialog.js";
 import { highlightAndScroll } from "./highlight.js";
 
 const FALLBACK_DECISION_MODE: DecisionMode = "time_saving";
@@ -75,6 +82,9 @@ export function ProductPagePanel() {
   const [reasonExpanded, setReasonExpanded] = useState(false);
   const [autoModeHint, setAutoModeHint] = useState<string | null>(null);
   const [watching, setWatching] = useState(false);
+  const [purchaseMarked, setPurchaseMarked] = useState(false);
+  const [priceDrops, setPriceDrops] = useState<PriceDrop[]>([]);
+  const [showPriceDropDialog, setShowPriceDropDialog] = useState(false);
 
   const runParse = useCallback(() => {
     setParseResult(null);
@@ -197,6 +207,21 @@ export function ProductPagePanel() {
       .catch(() => undefined);
   }, [parseResult]);
 
+  useEffect(() => {
+    if (!parseResult) return;
+    let active = true;
+
+    void readActivePriceDrops()
+      .then((drops) => {
+        if (active) setPriceDrops(drops);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [parseResult]);
+
   const decision = parseResult
     ? buildProductPageDecision(parseResult.model, mode, parseResult.alternatives, priceHistory ?? undefined)
     : null;
@@ -282,6 +307,65 @@ export function ProductPagePanel() {
     recordProductEvent("verification_details_viewed", mode);
   };
 
+  const handleMarkPurchased = () => {
+    if (purchaseMarked) return;
+    const skuMatch = location.href.match(/\/(\d+)\.html/);
+    const skuId = skuMatch?.[1];
+    if (!skuId) return;
+    const paid = parseResult.model.effectivePrice ?? parseResult.model.unitPrice;
+    if (!(paid > 0)) return;
+
+    void markPurchased({
+      skuId,
+      title: parseResult.model.title,
+      paidPrice: paid,
+      sellerType: parseResult.model.sellerType,
+      url: location.href,
+    })
+      .then(() => {
+        setPurchaseMarked(true);
+        recordProductEvent("purchase_marked", mode);
+      })
+      .catch(() => undefined);
+  };
+
+  const refreshPriceDrops = () => {
+    void readActivePriceDrops()
+      .then(setPriceDrops)
+      .catch(() => undefined);
+  };
+
+  const handleOpenPriceDrops = () => {
+    setShowPriceDropDialog(true);
+    recordProductEvent("price_drop_dialog_opened", mode);
+  };
+
+  const handleClosePriceDrops = () => {
+    setShowPriceDropDialog(false);
+  };
+
+  const handleApplyPriceGuard = (drop: PriceDrop) => {
+    recordProductEvent("price_guard_opened", mode);
+    void dismissPriceDrop(drop.skuId)
+      .then(() => {
+        refreshPriceDrops();
+      })
+      .catch(() => undefined);
+    window.open(
+      `https://jprice.jd.com/bybr/p.action?sku=${encodeURIComponent(drop.skuId)}`,
+      "_blank",
+    );
+  };
+
+  const handleDismissPriceDrop = (drop: PriceDrop) => {
+    void dismissPriceDrop(drop.skuId)
+      .then(() => {
+        refreshPriceDrops();
+        recordProductEvent("price_drop_dismissed", mode);
+      })
+      .catch(() => undefined);
+  };
+
   const hasAlternatives = parseResult.alternatives.length > 0;
 
   const handleComparisonToggle = () => {
@@ -350,6 +434,16 @@ export function ProductPagePanel() {
       label: watching ? "已关注" : "关注降价",
       onClick: handleWatchPrice,
     },
+    {
+      label: purchaseMarked ? "已标记已购" : "标记已购",
+      onClick: handleMarkPurchased,
+    },
+    ...(priceDrops.length > 0
+      ? [{
+          label: `降价 ${priceDrops.length}`,
+          onClick: handleOpenPriceDrops,
+        }]
+      : []),
   ];
 
   return (
@@ -376,6 +470,14 @@ export function ProductPagePanel() {
           chosen={decision!.chosen}
           alternativeUrls={parseResult.alternativeUrls}
           mode={mode}
+        />
+      ) : null}
+      {showPriceDropDialog ? (
+        <PriceDropDialog
+          drops={priceDrops}
+          onApply={handleApplyPriceGuard}
+          onDismiss={handleDismissPriceDrop}
+          onClose={handleClosePriceDrops}
         />
       ) : null}
     </>

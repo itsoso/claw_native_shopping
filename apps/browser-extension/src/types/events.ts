@@ -1,6 +1,6 @@
 import type { DecisionMode } from "./preferences.js";
 
-export type InteractionEventSurface = "product_page" | "cart_page";
+export type InteractionEventSurface = "product_page" | "cart_page" | "search_page";
 
 export type ProductPageEventType =
   | "recommendation_shown"
@@ -11,9 +11,24 @@ export type ProductPageEventType =
   | "verification_details_viewed"
   | "alternative_suggested"
   | "comparison_viewed"
-  | "price_history_viewed";
+  | "price_history_viewed"
+  | "price_alert_created"
+  | "price_alert_triggered"
+  | "price_alert_removed"
+  | "purchase_marked"
+  | "price_drop_dialog_opened"
+  | "price_drop_dismissed"
+  | "price_guard_opened";
 
-export type CartPageEventType = "cart_plan_shown" | "cart_plan_applied";
+export type CartPageEventType =
+  | "cart_plan_shown"
+  | "cart_plan_applied"
+  | "purchase_marked"
+  | "price_drop_dialog_opened"
+  | "price_drop_dismissed"
+  | "price_guard_opened";
+
+export type SearchPageEventType = "search_annotated" | "search_tag_clicked";
 
 type InteractionEventBase = {
   timestamp: number;
@@ -30,9 +45,16 @@ export type CartPageInteractionEvent = InteractionEventBase & {
   surface: "cart_page";
 };
 
+export type SearchPageInteractionEvent = InteractionEventBase & {
+  type: SearchPageEventType;
+  surface: "search_page";
+  itemCount?: number;
+};
+
 export type InteractionEvent =
   | ProductPageInteractionEvent
-  | CartPageInteractionEvent;
+  | CartPageInteractionEvent
+  | SearchPageInteractionEvent;
 
 export type ProductPageInteractionEventInput = Omit<
   ProductPageInteractionEvent,
@@ -44,6 +66,12 @@ export type CartPageInteractionEventInput = Omit<
   "timestamp"
 >;
 
+export type SearchPageInteractionEventInput = Omit<
+  SearchPageInteractionEvent,
+  "timestamp"
+>;
+
 export type InteractionEventInput =
   | ProductPageInteractionEventInput
-  | CartPageInteractionEventInput;
+  | CartPageInteractionEventInput
+  | SearchPageInteractionEventInput;

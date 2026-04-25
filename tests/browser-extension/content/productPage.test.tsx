@@ -25,6 +25,15 @@ const savingsMocks = vi.hoisted(() => ({
   addSavingsRecord: vi.fn(),
 }));
 
+const purchasedMocks = vi.hoisted(() => ({
+  markPurchased: vi.fn(),
+}));
+
+const priceDropMocks = vi.hoisted(() => ({
+  readActivePriceDrops: vi.fn(),
+  dismissPriceDrop: vi.fn(),
+}));
+
 const browserMock = vi.hoisted(() => {
   const sendMessage = vi.fn().mockResolvedValue({ success: true, data: [] });
   (globalThis as unknown as Record<string, unknown>).browser = {
@@ -80,6 +89,21 @@ vi.mock(
   }),
 );
 
+vi.mock(
+  "../../../apps/browser-extension/src/storage/purchasedProducts.js",
+  () => ({
+    markPurchased: purchasedMocks.markPurchased,
+  }),
+);
+
+vi.mock(
+  "../../../apps/browser-extension/src/storage/priceDrops.js",
+  () => ({
+    readActivePriceDrops: priceDropMocks.readActivePriceDrops,
+    dismissPriceDrop: priceDropMocks.dismissPriceDrop,
+  }),
+);
+
 import { ProductPagePanel } from "../../../apps/browser-extension/src/content/productPage.js";
 
 const MOCK_MODEL = {
@@ -100,6 +124,9 @@ describe("ProductPagePanel", () => {
     viewedProductMocks.recordViewedProduct.mockResolvedValue(undefined);
     savingsMocks.addSavingsRecord.mockReset();
     savingsMocks.addSavingsRecord.mockResolvedValue(undefined);
+    purchasedMocks.markPurchased.mockReset().mockResolvedValue(undefined);
+    priceDropMocks.readActivePriceDrops.mockReset().mockResolvedValue([]);
+    priceDropMocks.dismissPriceDrop.mockReset().mockResolvedValue(undefined);
     browserMock.sendMessage.mockReset();
     browserMock.sendMessage.mockResolvedValue({ success: true, data: [] });
   });
@@ -386,5 +413,75 @@ describe("ProductPagePanel", () => {
     });
 
     openSpy.mockRestore();
+  });
+
+  it("marks the current product as purchased and persists effective price", async () => {
+    preferenceMocks.getEffectiveMode.mockResolvedValue({ mode: "value", auto: false, autoReason: null });
+    eventMocks.recordEvent.mockResolvedValue(undefined);
+    asyncParserMocks.parseJdProductAsync.mockResolvedValue({
+      model: { ...MOCK_MODEL, unitPrice: 99, effectivePrice: 80 },
+      alternatives: [],
+      alternativeUrls: {},
+      incomplete: false,
+    });
+
+    Object.defineProperty(window, "location", {
+      value: new URL("https://item.jd.com/100001.html"),
+      writable: true,
+    });
+
+    render(<ProductPagePanel />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "标记已购" })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "标记已购" }));
+
+    await waitFor(() => {
+      expect(purchasedMocks.markPurchased).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skuId: "100001",
+          paidPrice: 80,
+        }),
+      );
+    });
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "已标记已购" })).toBeTruthy();
+    });
+  });
+
+  it("renders a 降价 N button when active price drops exist and opens the dialog", async () => {
+    preferenceMocks.getEffectiveMode.mockResolvedValue({ mode: "value", auto: false, autoReason: null });
+    eventMocks.recordEvent.mockResolvedValue(undefined);
+    asyncParserMocks.parseJdProductAsync.mockResolvedValue({
+      model: MOCK_MODEL,
+      alternatives: [],
+      alternativeUrls: {},
+      incomplete: false,
+    });
+    priceDropMocks.readActivePriceDrops.mockResolvedValue([
+      {
+        skuId: "100001",
+        title: "立白 洗衣液",
+        paidPrice: 100,
+        currentPrice: 80,
+        droppedBy: 20,
+        url: "https://item.jd.com/100001.html",
+        sellerType: "self_operated",
+        detectedAt: 1700000000,
+      },
+    ]);
+
+    render(<ProductPagePanel />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "降价 1" })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "降价 1" }));
+
+    expect(screen.getByRole("dialog", { name: "价保监控" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "去申请价保" })).toBeTruthy();
   });
 });
