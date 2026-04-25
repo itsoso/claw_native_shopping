@@ -4,6 +4,12 @@ const storageMocks = vi.hoisted(() => ({
   readActivePurchases: vi.fn(),
 }));
 
+const dropsMocks = vi.hoisted(() => ({
+  upsertPriceDrop: vi.fn(),
+  markPriceDropNotified: vi.fn(),
+  shouldNotify: vi.fn(),
+}));
+
 const priceMocks = vi.hoisted(() => ({
   fetchPriceHistory: vi.fn(),
 }));
@@ -42,6 +48,15 @@ vi.mock(
 );
 
 vi.mock(
+  "../../../apps/browser-extension/src/storage/priceDrops.js",
+  () => ({
+    upsertPriceDrop: dropsMocks.upsertPriceDrop,
+    markPriceDropNotified: dropsMocks.markPriceDropNotified,
+    shouldNotify: dropsMocks.shouldNotify,
+  }),
+);
+
+vi.mock(
   "../../../apps/browser-extension/src/parsers/fetchPriceHistory.js",
   () => ({
     fetchPriceHistory: priceMocks.fetchPriceHistory,
@@ -66,6 +81,11 @@ const PURCHASE = {
 describe("checkPriceGuards", () => {
   beforeEach(() => {
     storageMocks.readActivePurchases.mockReset();
+    dropsMocks.upsertPriceDrop
+      .mockReset()
+      .mockImplementation(async (input) => ({ ...input, detectedAt: Date.now() }));
+    dropsMocks.markPriceDropNotified.mockReset().mockResolvedValue(undefined);
+    dropsMocks.shouldNotify.mockReset().mockReturnValue(true);
     priceMocks.fetchPriceHistory.mockReset();
     browserMock.notifications.create.mockClear();
   });
@@ -77,6 +97,7 @@ describe("checkPriceGuards", () => {
 
     expect(drops).toEqual([]);
     expect(priceMocks.fetchPriceHistory).not.toHaveBeenCalled();
+    expect(dropsMocks.upsertPriceDrop).not.toHaveBeenCalled();
     expect(browserMock.notifications.create).not.toHaveBeenCalled();
   });
 
@@ -99,6 +120,9 @@ describe("checkPriceGuards", () => {
       currentPrice: 85,
       droppedBy: 15,
     });
+    expect(dropsMocks.upsertPriceDrop).toHaveBeenCalledWith(
+      expect.objectContaining({ skuId: "100001", droppedBy: 15 }),
+    );
     expect(browserMock.notifications.create).toHaveBeenCalledWith(
       "price-guard-100001",
       expect.objectContaining({
@@ -108,6 +132,7 @@ describe("checkPriceGuards", () => {
     );
     const msg = browserMock.notifications.create.mock.calls[0]![1]!.message;
     expect(msg).toContain("¥15.00");
+    expect(dropsMocks.markPriceDropNotified).toHaveBeenCalledWith("100001", 15);
   });
 
   it("does not notify when drop is below threshold (ratio)", async () => {
@@ -124,7 +149,27 @@ describe("checkPriceGuards", () => {
     const drops = await checkPriceGuards();
 
     expect(drops).toEqual([]);
+    expect(dropsMocks.upsertPriceDrop).not.toHaveBeenCalled();
     expect(browserMock.notifications.create).not.toHaveBeenCalled();
+  });
+
+  it("records the drop but skips notification when shouldNotify returns false", async () => {
+    storageMocks.readActivePurchases.mockResolvedValue([PURCHASE]);
+    priceMocks.fetchPriceHistory.mockResolvedValue({
+      trend: "low",
+      currentPrice: 85,
+      lowestPrice: 80,
+      highestPrice: 120,
+      averagePrice: 95,
+    });
+    dropsMocks.shouldNotify.mockReturnValueOnce(false);
+
+    const drops = await checkPriceGuards();
+
+    expect(drops).toHaveLength(1);
+    expect(dropsMocks.upsertPriceDrop).toHaveBeenCalled();
+    expect(browserMock.notifications.create).not.toHaveBeenCalled();
+    expect(dropsMocks.markPriceDropNotified).not.toHaveBeenCalled();
   });
 
   it("continues with remaining purchases when a fetch fails", async () => {

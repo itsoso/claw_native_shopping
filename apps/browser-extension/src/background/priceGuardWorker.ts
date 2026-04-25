@@ -1,5 +1,10 @@
 import { fetchPriceHistory } from "../parsers/fetchPriceHistory.js";
 import {
+  markPriceDropNotified,
+  shouldNotify,
+  upsertPriceDrop,
+} from "../storage/priceDrops.js";
+import {
   checkPriceDrop,
   readActivePurchases,
 } from "../storage/purchasedProducts.js";
@@ -30,12 +35,27 @@ export async function checkPriceGuards(): Promise<PriceDropResult[]> {
 
       drops.push(drop);
 
+      // Persist the drop record (used by the dialog and badge), then decide
+      // whether to actually push a Chrome notification based on growth.
+      const stored = await upsertPriceDrop({
+        skuId: drop.skuId,
+        title: drop.title,
+        paidPrice: drop.paidPrice,
+        currentPrice: drop.currentPrice,
+        droppedBy: drop.droppedBy,
+        url: drop.url,
+        sellerType: purchased.sellerType,
+      });
+
+      if (!shouldNotify(stored, drop.droppedBy)) continue;
+
       await browser.notifications.create(`${NOTIFICATION_PREFIX}${drop.skuId}`, {
         type: "basic",
         iconUrl: browser.runtime.getURL("icon/128.png"),
         title: "可申请价保",
         message: `${drop.title} 降至 ¥${drop.currentPrice.toFixed(2)}（已购 ¥${drop.paidPrice.toFixed(2)}，可退 ¥${drop.droppedBy.toFixed(2)}）`,
       });
+      await markPriceDropNotified(drop.skuId, drop.droppedBy);
     } catch {
       // continue with remaining purchases on any fetch or notification error
     }
